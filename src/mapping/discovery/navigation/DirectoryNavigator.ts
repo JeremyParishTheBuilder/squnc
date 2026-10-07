@@ -1,8 +1,8 @@
 import type { ColumnValue } from "../../../types/ColumnValue.js";
-import { Directory } from "../Directory.js";
+import { Directory } from "../nodejs/Directory.js";
 import { type DiscoveryNavigator } from "./DiscoveryNavigator.js";
 import type { DiscoveryValue } from "../../value/DiscoveryValue.js";
-import { type FsObject } from "../FsObject.js";
+import { type FsObject } from "../nodejs/FsObject.js";
 
 export class DirectoryNavigator implements DiscoveryNavigator<
   Directory,

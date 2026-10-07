@@ -17,10 +17,10 @@ import {
   some,
 } from "../dsl/predicate/functions.js";
 import { JsonDecoder } from "./decoding/JsonDecoder.js";
-import { Directory } from "./Directory.js";
+import { Directory } from "./nodejs/Directory.js";
 import { DiscoveryNode } from "./DiscoveryNode.js";
 import { DiscoveryRoot } from "./DiscoveryRoot.js";
-import { FsDiscoverySource } from "./DiscoverySource.js";
+import { FsDiscoverySource } from "./nodejs/FsDiscoverySource.js";
 import { DirectoryNavigator } from "./navigation/DirectoryNavigator.js";
 import { SelfNavigator } from "./navigation/SelfNavigator.js";
 import { StructuredArrayNavigator } from "./navigation/StructuredArrayNavigator.js";
@@ -153,10 +153,10 @@ export const exampleChainRegistry_DiscoveryDefinition = () => {
     registryRootDirectory,
   );
 
-  const testRegistryDiscoveryRoot = new DiscoveryRoot({
-    source: testRegistryRootDirectory,
-    discovery: testRegistryDiscoveryNode,
-  });
+  const testRegistryDiscoveryRoot = new DiscoveryRoot(
+    testRegistryRootDirectory,
+    testRegistryDiscoveryNode,
+  );
 
   return testRegistryDiscoveryRoot;
 };

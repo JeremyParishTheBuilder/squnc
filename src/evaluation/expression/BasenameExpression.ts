@@ -1,4 +1,4 @@
-import { type FsObject } from "../../mapping/discovery/FsObject.js";
+import { type FsObject } from "../../mapping/discovery/nodejs/FsObject.js";
 import { type Expression } from "./Expression.js";
 
 export class BasenameExpression implements Expression<FsObject, string> {

@@ -1,4 +1,7 @@
-import type { DiscoveryResult, DiscoveryResultId } from "./DiscoveryResult.js";
+import type { CaptureValue } from "../value/CaptureValue.js";
+import type { DiscoveryValue } from "../value/DiscoveryValue.js";
+import type { DiscoveryIdentity } from "./DiscoveryIdentity.js";
+import { DiscoveryResult, DiscoveryResultId } from "./DiscoveryResult.js";
 
 export class DiscoveryResults {
   private readonly results = new Map<DiscoveryResultId, DiscoveryResult>();
@@ -8,12 +11,30 @@ export class DiscoveryResults {
     return this.nextResultId++ as DiscoveryResultId;
   }
 
-  // public register(result: DiscoveryResult, parentId: DiscoveryResultId): void {
-  //   const nextResultId = this.getNextResultId();
-  //   const resultWithIds =
-  //     result
-  //       .withId(nextResultId)
-  //       .withParentId(parentId);
-  //   this.results.set(nextResultId, resultWithIds);
-  // }
+  public createDiscoveryResult(
+    parentResultId: DiscoveryResultId | null,
+    nodeType: string,
+    identity: DiscoveryIdentity,
+    value: DiscoveryValue,
+    captures: Map<string, CaptureValue>,
+  ): DiscoveryResult {
+    const resultId = this.getNextResultId();
+
+    const result = new DiscoveryResult(
+      resultId,
+      parentResultId,
+      nodeType,
+      identity,
+      value,
+      captures,
+    );
+
+    this.results.set(resultId, result);
+
+    return result;
+  }
+
+  public getAll(): readonly DiscoveryResult[] {
+    return [...this.results.values()];
+  }
 }

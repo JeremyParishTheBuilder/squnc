@@ -3,9 +3,10 @@ import type { PredicateBuilder } from "../dsl/predicate/PredicateBuilder.js";
 import type { CaptureValue } from "../value/CaptureValue.js";
 import type { DiscoveryDecoder } from "./decoding/DiscoveryDecoder.js";
 import { type DiscoveryContext } from "./DiscoveryContext.js";
-import { DiscoveryResult } from "./DiscoveryResult.js";
+import { DiscoveryResult, type DiscoveryResultId } from "./DiscoveryResult.js";
 import type { DiscoveryNavigator } from "./navigation/DiscoveryNavigator.js";
 import type { DiscoveryValue } from "../value/DiscoveryValue.js";
+import type { DiscoveryResults } from "./DiscoveryResults.js";
 
 export interface DiscoveryNodeSpec<
   TCurrent extends DiscoveryValue,
@@ -32,7 +33,11 @@ export class DiscoveryNode {
     >,
   ) {}
 
-  discover(context: DiscoveryContext): DiscoveryResult[] {
+  discover(
+    discoveryResults: DiscoveryResults,
+    parentResultId: DiscoveryResultId | null,
+    context: DiscoveryContext,
+  ): /*DiscoveryResult[]*/void {
     const results: DiscoveryResult[] = [];
 
     const decoder = this.spec.decoder;
@@ -40,7 +45,8 @@ export class DiscoveryNode {
     const navigator = this.spec.navigator;
 
     if (!navigator.accepts(context.current)) {
-      return [];
+      return;
+      //return [];
     }
 
     const candidates = navigator.next(context.current);
@@ -77,16 +83,23 @@ export class DiscoveryNode {
         );
       }
 
-      const result = new DiscoveryResult(
+      const result = discoveryResults.createDiscoveryResult(
+        parentResultId,
         this.spec.nodeType,
         childContext.identity,
         current,
         new Map(childContext.captures),
-        [],
       );
 
       for (const childNode of this.spec.children) {
-        result.children.push(...childNode.discover(childContext));
+        //result.children.push(
+          //...childNode.discover(
+          childNode.discover(
+            discoveryResults,
+            result.resultId,
+            childContext,
+          );
+        //);
       }
 
       results.push(result);
@@ -94,6 +107,6 @@ export class DiscoveryNode {
       console.log(this.spec.nodeType, "children:", this.spec.children.length);
     }
 
-    return results;
+    //return results;
   }
 }

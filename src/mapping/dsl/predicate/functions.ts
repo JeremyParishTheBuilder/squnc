@@ -7,7 +7,7 @@ import { IsNullPredicate } from "../../../evaluation/predicate/IsNull.js";
 import { NotPredicate } from "../../../evaluation/predicate/NotPredicate.js";
 import { OrPredicate } from "../../../evaluation/predicate/OrPredicate.js";
 import { XorPredicate } from "../../../evaluation/predicate/XorPredicate.js";
-import { type FsObject } from "../../discovery/FsObject.js";
+import { type FsObject } from "../../discovery/nodejs/FsObject.js";
 import { type ExpressionBuilder } from "../expression/ExpressionBuilder.js";
 import { PredicateBuilder } from "./PredicateBuilder.js";
 

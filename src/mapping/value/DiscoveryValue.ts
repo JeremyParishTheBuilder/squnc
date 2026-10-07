@@ -1,4 +1,4 @@
-import type { FsObject } from "../discovery/FsObject.js";
+import type { FsObject } from "../discovery/nodejs/FsObject.js";
 import type {
   StructuredElement,
   StructuredProperty,

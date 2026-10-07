@@ -8,12 +8,11 @@ export type DiscoveryResultId = number & {
 
 export class DiscoveryResult {
   constructor(
+    readonly resultId: DiscoveryResultId,
+    readonly parentResultId: DiscoveryResultId | null,
     readonly nodeType: string,
     readonly identity: DiscoveryIdentity,
     readonly value: DiscoveryValue,
     readonly captures: Map<string, CaptureValue>,
-    readonly children: DiscoveryResult[] = [],
-    readonly resultId?: DiscoveryResultId,
-    readonly parentResultId?: DiscoveryResultId,
   ) {}
 }

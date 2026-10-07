@@ -1,4 +1,4 @@
-import { Directory } from "../../mapping/discovery/Directory.js";
+import { Directory } from "../../mapping/discovery/nodejs/Directory.js";
 import { type DiscoveryContext } from "../../mapping/discovery/DiscoveryContext.js";
 import { type Expression } from "./Expression.js";
 

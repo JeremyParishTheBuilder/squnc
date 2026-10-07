@@ -1,4 +1,4 @@
-import { File } from "../File.js";
+import { File } from "../nodejs/File.js";
 import type { DiscoveryValue } from "../../value/DiscoveryValue.js";
 import type { DiscoveryDecoder } from "./DiscoveryDecoder.js";
 import fs from "fs";

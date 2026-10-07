@@ -10,6 +10,7 @@ export type DiscoveryIdentityPart = ColumnValue;
 // }
 // because I think eventually you'll want operations like
 // identity.untilNodeType("chainDirectory")
+// TODO, review
 
 export class DiscoveryIdentity {
   constructor(readonly parts: readonly ColumnValue[]) {}

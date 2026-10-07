@@ -1,6 +1,6 @@
 import type { DiscoveryNavigator } from "./DiscoveryNavigator.js";
-import { File } from "../File.js";
-import { Directory } from "../Directory.js";
+import { File } from "../nodejs/File.js";
+import { Directory } from "../nodejs/Directory.js";
 import type { DiscoveryValue } from "../../value/DiscoveryValue.js";
 import type { ColumnValue } from "../../../types/ColumnValue.js";
 

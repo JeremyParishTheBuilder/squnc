@@ -1,5 +1,5 @@
-import { Directory } from "../discovery/Directory.js";
-import { File } from "../discovery/File.js";
+import { Directory } from "../discovery/nodejs/Directory.js";
+import { File } from "../discovery/nodejs/File.js";
 import type { DiscoveryValue } from "./DiscoveryValue.js";
 import {
   isStructuredElement,

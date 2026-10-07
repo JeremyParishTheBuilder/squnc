@@ -10,7 +10,6 @@ export class DiscoveryContext implements CaptureContext {
     readonly current: DiscoveryValue,
     readonly captures: ReadonlyMap<string, CaptureValue> = new Map(),
     readonly identity: DiscoveryIdentity,
-    readonly result?: DiscoveryResult,
   ) {}
 
   withCurrent(current: DiscoveryValue): DiscoveryContext {
@@ -18,7 +17,6 @@ export class DiscoveryContext implements CaptureContext {
       current,
       this.captures,
       this.identity,
-      this.result,
     );
   }
 
@@ -27,7 +25,6 @@ export class DiscoveryContext implements CaptureContext {
       this.current,
       new Map([...this.captures, [name, value]]),
       this.identity,
-      this.result,
     );
   }
 
@@ -36,19 +33,6 @@ export class DiscoveryContext implements CaptureContext {
       this.current,
       this.captures,
       this.identity.append(...parts),
-      this.result,
     );
-  }
-
-  selectCaptures(names: readonly string[]): Map<string, CaptureValue> {
-    const result = new Map<string, CaptureValue>();
-
-    for (const name of names) {
-      if (this.captures.get(name) !== undefined) {
-        result.set(name, this.captures.get(name)!);
-      }
-    }
-
-    return result;
   }
 }

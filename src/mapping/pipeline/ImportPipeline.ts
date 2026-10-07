@@ -9,6 +9,7 @@ import type { ImportRoot } from "../import/ImportRoot.js";
 import { ObjectImporter } from "../import/ObjectImporter.js";
 import type { ImportResult } from "../import/ImportResult.js";
 import type { DiscoveryResult } from "../discovery/DiscoveryResult.js";
+import { DiscoveryResults } from "../discovery/DiscoveryResults.js";
 
 export interface ImportPipelineSpec {
   readonly importRoots: readonly ImportRoot[];
@@ -23,29 +24,39 @@ export class ImportPipeline {
 
     const objectImporter = new ObjectImporter();
 
-    let discoveryResults: DiscoveryResult[];
+    //let discoveryResults: DiscoveryResult[];
+    //let discoveryResults: DiscoveryResults = new DiscoveryResults;
 
     for (const importRoot of spec.importRoots) {
-      const nodeType = importRoot.discovery.node.spec.nodeType;
+      //const nodeType = importRoot.discovery.node.spec.nodeType;
 
-      discoveryResults = importRoot.discovery.node.discover(
-        new DiscoveryContext(
-          importRoot.discovery.source.open(),
-          new Map(),
-          ImportRowIdentity.from([spec.sourceIdentity ?? ""]),
-        ),
-      );
+      const discoveryResults = importRoot.discovery.discover();
 
-      const discoveryRoot = discoveryResults.find(
-        (dr) => dr.nodeType === nodeType,
-      );
+      // Existing Import architecture is temporarily incompatible
+      // with DiscoveryResults staging.
+      // TODO
 
-      if (!discoveryRoot) {
-        throw new Error(`No discovery result matching node type: ${nodeType}`);
-      }
+      // discoveryResults = importRoot.discovery.node.discover(
+      //   discoveryResults,
+      //   null,
+      //   new DiscoveryContext(
+      //     importRoot.discovery.physicalSource.open(),
+      //     new Map(),
+      //     ImportRowIdentity.from([spec.sourceIdentity ?? ""]),
+      //   ),
+      // );
+
+      // const discoveryRoot = discoveryResults.find(
+      //   (dr) => dr.nodeType === nodeType,
+      // );
+
+      // if (!discoveryRoot) {
+      //   throw new Error(`No discovery result matching node type: ${nodeType}`);
+      // }
 
       importResults.push(
-        ...objectImporter.import(discoveryRoot, importRoot.spec.mapping),
+        //...objectImporter.import(discoveryRoot, importRoot.spec.mapping),
+        ...objectImporter.import(discoveryResults, importRoot.spec.mapping), // discoveryResults is a guess
       );
     }
 

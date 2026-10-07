@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { JsonValueExpression } from '../../src/evaluation/expression/JsonValueExpression.ts';
 import { JsonValuePath } from '../../src/mapping/import/JsonValuePath.ts';
 import { SourceExpression } from '../../src/evaluation/expression/SourceExpression.ts';
-import File from '../../src/mapping/discovery/File.ts';
+import File from '../../src/mapping/discovery/nodejs/File.ts';
 import { createImportContext } from '../utils/importHelpers.ts';
 import { isStructuredValue } from '../../src/mapping/value/StructuredValue.ts';
 import { SourceExpressionNode } from '../../src/ast/expression/SourceExpressionNode.ts';
