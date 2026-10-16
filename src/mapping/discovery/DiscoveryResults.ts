@@ -1,3 +1,4 @@
+import type { RowView } from "../../relational/RowView.js";
 import type { CaptureValue } from "../value/CaptureValue.js";
 import type { DiscoveryValue } from "../value/DiscoveryValue.js";
 import type { DiscoveryIdentity } from "./DiscoveryIdentity.js";

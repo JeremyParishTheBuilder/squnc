@@ -1,3 +1,4 @@
+import type { RowView } from "../../relational/RowView.js";
 import type { Table } from "../../relational/Table.js";
 import type { SqlType } from "../../types/SqlType.js";
 import { type PlanNode } from "./PlanNode.js";
@@ -12,11 +13,3 @@ export type QueryColumn = {
   type: SqlType;
   nullable: boolean;
 };
-
-export function queryColumnsFromTable(table: Table): QueryColumn[] {
-  return [...table.columns.values()].map((column) => ({
-    name: column.name,
-    type: column.type,
-    nullable: column.nullable,
-  }));
-}

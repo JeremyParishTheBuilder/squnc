@@ -1,3 +1,4 @@
+import { isStructuredContainer, isStructuredValue } from "../mapping/value/StructuredValue.js";
 import type { ColumnValue } from "./ColumnValue.js";
 import {
   isValidDateValue,
@@ -12,7 +13,8 @@ export type SqlType =
   | VarcharType
   | BooleanType
   | DateType
-  | TimestampType;
+  | TimestampType
+  | JsonType;
 
 export interface IntegerType {
   readonly kind: "integer";
@@ -42,6 +44,10 @@ export interface TimestampType {
   readonly precision?: number;
 }
 
+export interface JsonType {
+  readonly kind: "json";
+}
+
 export const SQL_INTEGER: IntegerType = {
   kind: "integer",
 };
@@ -66,6 +72,10 @@ export const SQL_TIMESTAMP: TimestampType = {
   kind: "timestamp",
 };
 
+export const SQL_JSON: JsonType = {
+  kind: "json",
+};
+
 export function varchar(length?: number): VarcharType {
   return { kind: "varchar", length };
 }
@@ -87,6 +97,7 @@ export function isSameType(type1: SqlType, type2: SqlType): boolean {
     case "integer":
     case "boolean":
     case "date":
+    case "json":
       return true;
 
     case "decimal":
@@ -127,6 +138,9 @@ export function matchesSqlType(value: unknown, type: SqlType): boolean {
 
     case "timestamp":
       return typeof value === "string" && isValidTimestampValue(value);
+
+    case "json":
+      return isStructuredValue(value); // technically allows primitives
   }
 }
 
@@ -145,6 +159,10 @@ export function sqlTypeFromValue(value: ColumnValue): SqlType {
 
   if (typeof value === "boolean") {
     return SQL_BOOLEAN;
+  }
+
+  if (isStructuredContainer(value)) {
+    return SQL_JSON;
   }
 
   throw new Error("Unexpected column value.");
@@ -191,6 +209,9 @@ export function isCastable(from: SqlType, to: SqlType): boolean {
 
     case "timestamp":
       return to.kind === "varchar" || to.kind === "date";
+
+    case "json":
+      return false;
   }
 }
 
@@ -253,6 +274,9 @@ export function castValue(
 
       return normalizeTimestamp(value);
     }
+
+    case "json":
+      return value;
   }
 }
 
@@ -265,5 +289,7 @@ export function canBeIndexed(type: SqlType): boolean {
     case "date":
     case "timestamp":
       return true;
+    case "json":
+      return false;
   }
 }

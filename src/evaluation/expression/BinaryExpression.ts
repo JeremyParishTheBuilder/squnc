@@ -18,6 +18,9 @@ export class BinaryExpression<TContext> implements Expression<TContext> {
       return false;
     }
 
+    //assertPrimitiveValue(leftResult);
+    //assertPrimitiveValue(rightResult);
+
     switch (this.operator) {
       case "add":
         assertIsNumber(leftResult);

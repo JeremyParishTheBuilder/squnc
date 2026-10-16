@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { createTestPostgresSql } from '../utils/engineHelpers.ts';
-import { SQL_DECIMAL, SQL_INTEGER, SQL_VARCHAR } from '../../src/types/SqlType.ts';
+import { SQL_DECIMAL, SQL_INTEGER, SQL_JSON, SQL_VARCHAR } from '../../src/types/SqlType.ts';
 import { createTableTestSpec } from '../utils/buildSchema.ts';
-import { col } from '../../src/ast/dsl.ts';
+import { cast, col, discovery, json_query, json_value } from '../../src/ast/dsl.ts';
+import type { DiscoveryResultId } from '../../src/mapping/discovery/DiscoveryResult.ts';
+import { createTestDiscoveryResults } from '../utils/importHelpers.ts';
 
 describe('Integration::query', () => {
   describe("Union All", () => {
@@ -689,6 +691,168 @@ describe('Integration::query', () => {
           index: 0,
           values: [2, "Bob"],
         },
+      ]);
+    });
+  });
+
+  describe("Discovery tabular source", () => {
+    it("scans and filters DiscoveryResults", () => {
+      const sql = createTestPostgresSql();
+    
+      sql.createDatabase("DB1").execute();
+      sql.useDatabase("DB1").execute();
+  
+      sql.begin().execute();
+  
+      const discoveryResults = createTestDiscoveryResults([
+        {
+          parentResultId: null,
+          nodeType: "registry",
+        },
+        {
+          parentResultId: 1,
+          nodeType: "chainDirectory",
+        },
+        {
+          parentResultId: 1,
+          nodeType: "file",
+        },
+      ]);
+  
+      const result = sql
+        .select("*")
+        .from(discovery(discoveryResults))
+        .where(col("nodeType").eq("chainDirectory"))
+        .execute();
+  
+      expect(result[0].rows).toHaveLength(1);
+      expect(result[0].rows[0].values)
+        .toEqual([2, 1, "chainDirectory", [0], {}, {}]);
+      expect(result[0].columns).toEqual([
+        { name: "resultId", type: SQL_INTEGER, nullable: false },
+        { name: "parentResultId", type: SQL_INTEGER, nullable: true },
+        { name: "nodeType", type: SQL_VARCHAR, nullable: false },
+        { name: "identity", type: SQL_JSON, nullable: false },
+        { name: "value", type: SQL_JSON, nullable: true },
+        { name: "captures", type: SQL_JSON, nullable: false },
+      ]);
+
+      const result2 = sql
+        .select("*")
+        .from(discovery(discoveryResults))
+        .where(col("nodeType").eq("rpcEndpoint"))
+        .execute();
+  
+      expect(result2[0].rows).toHaveLength(0);
+    });
+  });
+
+  
+  describe("JSON expressions", () => {
+    const document = {
+      chain_name: "osmosis",
+      codebase: {
+        version: 12,
+      },
+      metadata: {
+        network: "mainnet",
+        active: true,
+      },
+      versions: [1, 2, 3],
+    };
+
+    function setupJsonTable() {
+      const sql = createTestPostgresSql();
+
+      sql.createDatabase("DB1").execute();
+      sql.useDatabase("DB1").execute();
+
+      sql.createTable(
+        ...createTableTestSpec("Documents", {
+          Document: {
+            type: SQL_JSON,
+            nullable: false,
+          },
+        }),
+      ).execute();
+
+      sql.begin().execute();
+
+      sql
+        .insertInto("Documents", ["Document"])
+        .values([[document]])
+        .execute();
+
+      sql.commit().execute();
+
+      return sql;
+    }
+
+    it("extracts a scalar with JSON_VALUE", () => {
+      const sql = setupJsonTable();
+
+      const [result] = sql
+        .select([json_value(col("Document"), "$.chain_name")])
+        .from("Documents")
+        .execute();
+
+      expect(result.rows.map((row) => row.values)).toEqual([
+        ["osmosis"],
+      ]);
+    });
+
+    it("extracts a nested scalar with JSON_VALUE", () => {
+      const sql = setupJsonTable();
+
+      const [result] = sql
+        .select([json_value(col("Document"), "$.codebase.version")])
+        .from("Documents")
+        .execute();
+
+      expect(result.rows.map((row) => row.values)).toEqual([
+        ["12"],
+      ]);
+    });
+
+    it("casts a JSON_VALUE result to a numeric type", () => {
+      const sql = setupJsonTable();
+
+      const [result] = sql
+        .select([
+          cast(json_value(col("Document"), "$.codebase.version"))
+          .as(SQL_DECIMAL),
+        ])
+        .from("Documents")
+        .execute();
+
+      expect(result.rows.map((row) => row.values)).toEqual([
+        [12],
+      ]);
+    });
+
+    it("extracts a nested object with JSON_QUERY", () => {
+      const sql = setupJsonTable();
+
+      const [result] = sql
+        .select([json_query(col("Document"), "$.metadata")])
+        .from("Documents")
+        .execute();
+
+      expect(result.rows.map((row) => row.values)).toEqual([
+        [{ network: "mainnet", active: true }],
+      ]);
+    });
+
+    it("extracts an array with JSON_QUERY", () => {
+      const sql = setupJsonTable();
+
+      const [result] = sql
+        .select([json_query(col("Document"), "$.versions")])
+        .from("Documents")
+        .execute();
+
+      expect(result.rows.map((row) => row.values)).toEqual([
+        [[1, 2, 3]],
       ]);
     });
   });

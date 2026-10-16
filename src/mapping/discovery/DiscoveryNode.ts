@@ -37,7 +37,7 @@ export class DiscoveryNode {
     discoveryResults: DiscoveryResults,
     parentResultId: DiscoveryResultId | null,
     context: DiscoveryContext,
-  ): /*DiscoveryResult[]*/void {
+  ): void {
     const results: DiscoveryResult[] = [];
 
     const decoder = this.spec.decoder;
@@ -46,7 +46,6 @@ export class DiscoveryNode {
 
     if (!navigator.accepts(context.current)) {
       return;
-      //return [];
     }
 
     const candidates = navigator.next(context.current);
@@ -92,19 +91,16 @@ export class DiscoveryNode {
       );
 
       for (const childNode of this.spec.children) {
-        //result.children.push(
-          //...childNode.discover(
           childNode.discover(
             discoveryResults,
             result.resultId,
             childContext,
           );
-        //);
       }
 
       results.push(result);
 
-      console.log(this.spec.nodeType, "children:", this.spec.children.length);
+      //console.log(this.spec.nodeType, "children:", this.spec.children.length);
     }
 
     //return results;

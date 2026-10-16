@@ -42,7 +42,7 @@ export const exampleChainRegistry_DiscoveryDefinition = () => {
     nodeType: "asset",
     captures: {
       base: value("base"),
-      owner: concat(
+      owner: concat( // this 'owner' will soon instead be defined by import 
         literal("Asset:"),
         captureScalar("chainDirectoryName"),
         literal(":"),

@@ -40,14 +40,17 @@ export function bindSelect(
   semantic: SemanticAnalyzer,
   stmt: SelectStatement,
 ): QueryPlan {
-  const source: BoundRelation = bindTabularExpression(semantic, stmt.source);
+  const source = bindTabularExpression(semantic, stmt.source);
 
   let node: PlanNode = source.plan.root;
 
   const scope = new RelationScope([...source.relations]);
+  //const scope: ExpressionResolver = createScope(source); // creates either RelationScope or StructuredValueScope
 
   const whereClause = stmt.where;
   if (whereClause) {
+    //node = bindFilter(whereClause, scope); // can dispatch based on scope 'kind'
+
     const predicate = bindPredicate(
       resolvePredicate(whereClause, scope),
       scope,
@@ -56,6 +59,7 @@ export function bindSelect(
     node = new FilterNode(predicate, node);
   }
 
+  //bindProjection(stmt.projection, scope); // can dispatch based on scope 'kind'
   const boundProjection =
     stmt.projection === "*"
       ? bindStarProjection(source)
@@ -191,6 +195,7 @@ function bindStarProjection(source: BoundRelation): {
 function bindExplicitProjection(
   projection: (ExpressionNode | ExpressionProjection | ColumnValue)[],
   scope: RelationScope,
+  //scope: ExpressionResolver,
 ): {
   node: ExpressionProjection;
   resolved: ResolvedExpressionNode;

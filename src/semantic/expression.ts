@@ -28,6 +28,7 @@ import {
   isSameType,
   SQL_DATE,
   SQL_INTEGER,
+  SQL_JSON,
   SQL_TIMESTAMP,
   SQL_VARCHAR,
   sqlTypeFromValue,
@@ -37,22 +38,38 @@ import {
 import { ResolvedCastExpressionNode } from "../ast/expression/CastExpressionNode.js";
 import { CastExpression } from "../evaluation/expression/CastExpression.js";
 import { LiteralExpressionNode } from "../ast/expression/LiteralExpressionNode.js";
-import { isExpressionNodeUnion } from "../ast/expression/isExpressionNodeUnion.js";
+import { isExpressionNodeUnion } from "../ast/expression/ExpressionNode.js";
 import type { TemporalExpressionNode } from "../ast/expression/TemporalExpressionNode.js";
 import type { SqlFunctionExpressionNode } from "../ast/expression/SqlFunctionExpressionNode.js";
 import type { ColumnResolver } from "./relation/ColumnResolver.js";
 import type { ColumnBinder } from "./relation/ColumnBinder.js";
+import { JsonValueExpression } from "../evaluation/expression/JsonValueExpression.js";
+import { JsonQueryExpression } from "../evaluation/expression/JsonQueryExpression.js";
+import { ResolvedJsonValueExpressionNode } from "../ast/expression/JsonValueExpressionNode.js";
+import { ResolvedJsonQueryExpressionNode } from "../ast/expression/JsonQueryExpressionNode.js";
 
 export function bindExpression(
   expr: ResolvedExpressionNode,
   binder: ColumnBinder,
-): Expression<RowView> {
+): Expression<RowView, ColumnValue> { 
   switch (expr.kind) {
     case "literal":
       return new LiteralExpression(expr.value);
 
     case "column":
       return new ColumnExpression(binder.requireColumnPosition(expr.column));
+
+    case "json_value":
+      return new JsonValueExpression(
+        bindExpression(expr.source, binder),
+        expr.path,
+      );
+
+    case "json_query":
+      return new JsonQueryExpression(
+        bindExpression(expr.source, binder),
+        expr.path,
+      );
 
     case "temporal":
       return new TemporalExpression(expr.expression);
@@ -113,8 +130,28 @@ export function resolveExpression(
 
     case "column":
       return new ResolvedColumnExpressionNode(
-        scope.requireResolvedColumn(expr.columnName),
+        scope.resolveColumn(expr.columnName),
       );
+
+    case "json_value": {
+      const source = resolveExpression(expr.source, scope);
+      assertJsonSource(source);
+
+      return new ResolvedJsonValueExpressionNode(
+        source,
+        expr.path,
+      );
+    }
+
+    case "json_query": {
+      const source = resolveExpression(expr.source, scope);
+      assertJsonSource(source);
+
+      return new ResolvedJsonQueryExpressionNode(
+        source,
+        expr.path,
+      );
+    }
 
     case "temporal":
       return expr;
@@ -161,6 +198,14 @@ export function resolveExpression(
     default: {
       throw new Error(`Unsupported expression kind: ${expr}`);
     }
+  }
+}
+
+function assertJsonSource(source: ResolvedExpressionNode) {
+  const sourceSqlType = sqlTypeFromExpression(source);
+
+  if (sourceSqlType !== SQL_JSON) {
+    throw new Error("Source of JSON expression must have SQL_JSON type");
   }
 }
 
@@ -406,6 +451,12 @@ export function sqlTypeFromExpression(expr: ResolvedExpressionNode): SqlType {
     case "sql_function":
       return sqlTypeFromSqlFunction(expr);
 
+    case "json_query":
+      return SQL_JSON;
+
+    case "json_value":
+      return SQL_VARCHAR;
+
     default:
       throw new Error(`Unsupported expression: ${expr}`);
   }
@@ -454,5 +505,11 @@ export function getExpressionNullability(
 
     case "sql_function":
       return false;
+
+    case "json_value":
+      return true;
+
+    case "json_query":
+      return true;
   }
 }

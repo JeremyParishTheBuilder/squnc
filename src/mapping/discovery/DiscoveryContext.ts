@@ -2,7 +2,7 @@ import { type ColumnValue } from "../../types/ColumnValue.js";
 import { type CaptureContext } from "./CaptureContext.js";
 import type { DiscoveryValue } from "../value/DiscoveryValue.js";
 import type { CaptureValue } from "../value/CaptureValue.js";
-import type { DiscoveryIdentity } from "./DiscoveryIdentity.js";
+import type { DiscoveryIdentity, DiscoveryIdentityPart } from "./DiscoveryIdentity.js";
 import type { DiscoveryResult } from "./DiscoveryResult.js";
 
 export class DiscoveryContext implements CaptureContext {
@@ -28,7 +28,7 @@ export class DiscoveryContext implements CaptureContext {
     );
   }
 
-  withIdentityParts(parts: readonly ColumnValue[]): DiscoveryContext {
+  withIdentityParts(parts: readonly DiscoveryIdentityPart[]): DiscoveryContext {
     return new DiscoveryContext(
       this.current,
       this.captures,

@@ -8,7 +8,7 @@ import type { ResolvedColumn } from "./ResolvedColumn.js";
 export class RelationScope implements ColumnResolver, ColumnBinder {
   constructor(public readonly relations: readonly RelationBinding[]) {}
 
-  public requireResolvedColumn(reference: string): ResolvedColumn {
+  public resolveColumn(reference: string): ResolvedColumn {
     const parsed = parseColumnReference(reference);
 
     const relationName = parsed.relationName

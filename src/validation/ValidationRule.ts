@@ -2,21 +2,15 @@ import type { ConstraintStatement } from "../statements/Statement.js";
 
 export interface ValidationRuleSpec {
   readonly name: string;
-
   readonly description?: string;
-
   readonly category?: string;
-
   readonly statements: readonly ConstraintStatement[];
 }
 
 export class ValidationRule {
   readonly name: string;
-
   readonly description?: string;
-
   readonly category?: string;
-
   readonly statements: readonly ConstraintStatement[];
 
   public constructor(spec: ValidationRuleSpec) {

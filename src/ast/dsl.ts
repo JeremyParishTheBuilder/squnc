@@ -1,19 +1,20 @@
+import type { DiscoveryResults } from "../mapping/discovery/DiscoveryResults.js";
 import { JsonValuePath } from "../mapping/import/JsonValuePath.js";
-import type { CaptureValue } from "../mapping/value/CaptureValue.js";
 import type { ColumnValue } from "../types/ColumnValue.js";
 import { CaseBuilder } from "./expression/CaseBuilder.js";
 import { CastBuilder } from "./expression/CastBuilder.js";
 import { ColumnExpressionNode } from "./expression/ColumnExpressionNode.js";
 import { ConcatExpressionNode } from "./expression/ConcatExpressionNode.js";
 import type { ExpressionNode } from "./expression/ExpressionNode.js";
+import { JsonQueryExpressionNode } from "./expression/JsonQueryExpressionNode.js";
 import { JsonValueExpressionNode } from "./expression/JsonValueExpressionNode.js";
 import { LiteralExpressionNode } from "./expression/LiteralExpressionNode.js";
-import { SourceExpressionNode } from "./expression/SourceExpressionNode.js";
 import { AndPredicateNode } from "./predicate/AndPredicateNode.js";
 import { NotPredicateNode } from "./predicate/NotPredicateNode.js";
 import { OrPredicateNode } from "./predicate/OrPredicateNode.js";
 import type { PredicateNode } from "./predicate/PredicateNode.js";
 import { XorPredicateNode } from "./predicate/XorPredicateNode.js";
+import { DiscoveryResultsNode } from "./tabular/DiscoveryResultsNode.js";
 import { TableReferenceNode } from "./tabular/TableReferenceNode.js";
 
 // Expressions
@@ -39,20 +40,27 @@ export function cast(expression: ExpressionNode | ColumnValue) {
 }
 
 export function json_value(
-  source: ExpressionNode | CaptureValue,
+  source: ExpressionNode,
   path: string,
 ) {
   return new JsonValueExpressionNode(source, JsonValuePath.parse(path));
 }
 
-export function source() {
-  return new SourceExpressionNode();
+export function json_query(
+  source: ExpressionNode,
+  path: string,
+) {
+  return new JsonQueryExpressionNode(source, JsonValuePath.parse(path));
 }
 
 // Tabular Expressions
 
 export function table(reference: string) {
   return new TableReferenceNode(reference);
+}
+
+export function discovery(results: DiscoveryResults) {
+  return new DiscoveryResultsNode(results);
 }
 
 // Predicates

@@ -1,6 +1,7 @@
 import type { ColumnValue } from "../../types/ColumnValue.js";
+import type { PrimitiveValue } from "../value/StructuredValue.js";
 
-export type DiscoveryIdentityPart = ColumnValue;
+export type DiscoveryIdentityPart = PrimitiveValue;
 
 // class DiscoveryIdentityPart {
 //     constructor(
@@ -13,7 +14,7 @@ export type DiscoveryIdentityPart = ColumnValue;
 // TODO, review
 
 export class DiscoveryIdentity {
-  constructor(readonly parts: readonly ColumnValue[]) {}
+  constructor(readonly parts: readonly DiscoveryIdentityPart[]) {}
 
   static empty(): DiscoveryIdentity {
     return new DiscoveryIdentity([]);

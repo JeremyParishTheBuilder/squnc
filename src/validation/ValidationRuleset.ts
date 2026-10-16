@@ -3,17 +3,13 @@ import { ValidationRule, ValidationRuleSpec } from "./ValidationRule.js";
 
 export interface ValidationRulesetSpec {
   readonly name: string;
-
   readonly description?: string;
-
   readonly rules?: ValidationRule[];
 }
 
 export class ValidationRuleset extends Immutable {
   readonly name: string;
-
   readonly description?: string;
-
   readonly rules: readonly ValidationRule[];
 
   private constructor(spec: ValidationRulesetSpec) {

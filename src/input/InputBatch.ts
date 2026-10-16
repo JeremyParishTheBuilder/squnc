@@ -499,14 +499,24 @@ export abstract class InputBatch {
     return GETDATE;
   }
 
-  asStatement(): Statement | undefined {
+  tryAsStatement(): Statement | undefined {
     this.finalizeStatement();
 
     return this.statements.pop();
   }
 
+  asStatement(): Statement {
+    const statement = this.tryAsStatement();
+
+    if (statement === undefined) {
+      throw new Error("No statement is available.");
+    }
+
+    return statement;
+  }
+
   asConstraintStatement(): ConstraintStatement {
-    const statement = this.asStatement();
+    const statement = this.tryAsStatement();
 
     if (!isConstraintStatement(statement)) {
       throw new Error(
@@ -518,7 +528,7 @@ export abstract class InputBatch {
   }
 
   asQueryStatement(): QueryStatement {
-    const statement = this.asStatement();
+    const statement = this.tryAsStatement();
 
     if (!isQueryStatement(statement)) {
       throw new Error("Statement is not a query statement.");

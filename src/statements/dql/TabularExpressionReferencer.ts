@@ -55,9 +55,6 @@ export abstract class TabularExpressionReferencer implements StatementBuilder {
       source: this.source.source,
       alias,
     };
-
-    console.log(`Successfully assigned alias: ${alias} to source`);
-    console.log(this.source);
   }
   assertSourceNotProjected(): void {
     if (!this.source) {
