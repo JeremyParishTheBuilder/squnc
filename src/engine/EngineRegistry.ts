@@ -15,7 +15,7 @@ export class EngineRegistry {
 
   public engine(name: string | undefined = this._currentDefaultEngine): Engine {
     if (!name) {
-      throw new Error(`No engine specified`);
+      throw new Error(`No engine specified. Given name: ${name}`);
     }
     const engine = this.engines.get(name);
     if (!engine) {

@@ -45,8 +45,7 @@ export function bindSelect(
   let node: PlanNode = source.plan.root;
 
   const scope = new RelationScope([...source.relations]);
-  //const scope: ExpressionResolver = createScope(source); // creates either RelationScope or StructuredValueScope
-
+  
   const whereClause = stmt.where;
   if (whereClause) {
     //node = bindFilter(whereClause, scope); // can dispatch based on scope 'kind'

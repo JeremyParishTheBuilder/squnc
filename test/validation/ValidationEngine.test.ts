@@ -6,6 +6,8 @@ import { createTestPostgresSql, freshEngine } from "../utils/engineHelpers.js";
 import { col } from "../../src/ast/dsl.js";
 import { SQL_DECIMAL, SQL_VARCHAR } from "../../src/types/SqlType.js";
 import { createTableTestSpec } from "../utils/buildSchema.js";
+import type { PostgresInputBatch } from "../../src/input/PostgresInputBatch.js";
+import type { InputBatch } from "../../src/input/InputBatch.js";
 
 
 describe("ValidationEngine::validate", () => {
@@ -51,9 +53,11 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-    const ruleset = ValidationRuleset
+    const ruleset = (sql: InputBatch) => {
+      return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
+    }
 
     const report = ValidationEngine.validate({
       engine,
@@ -111,9 +115,11 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-    const ruleset = ValidationRuleset
+     const ruleset = (sql: InputBatch) => {
+      return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
+     }
 
     const report = ValidationEngine.validate({
       engine,
@@ -178,9 +184,11 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-    const ruleset = ValidationRuleset
+     const ruleset = (sql: InputBatch) => {
+      return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
+     }
 
     const report = ValidationEngine.validate({
       engine,
@@ -259,9 +267,11 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-    const ruleset = ValidationRuleset
+     const ruleset = (sql: InputBatch) => {
+      return ValidationRuleset
       .create({ name: "Order Validation" })
       .withRule(rule);
+     }
 
     const report = ValidationEngine.validate({
       engine,
@@ -339,10 +349,12 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-    const ruleset = ValidationRuleset
+     const ruleset = (sql: InputBatch) => {
+      return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(passingRule)
       .withRule(failingRule);
+     }
 
     const report = ValidationEngine.validate({
       engine,
@@ -412,9 +424,11 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-    const ruleset = ValidationRuleset
+     const ruleset = (sql: InputBatch) => {
+      return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
+     }
 
     const report = ValidationEngine.validate({
       engine,
@@ -479,9 +493,11 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-    const ruleset = ValidationRuleset
+     const ruleset = (sql: InputBatch) => {
+      return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
+     }
 
     const report = ValidationEngine.validate({
       engine,
@@ -538,9 +554,11 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-    const ruleset = ValidationRuleset
+     const ruleset = (sql: InputBatch) => {
+      return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
+     }
 
     const firstReport = ValidationEngine.validate({
       engine,
@@ -589,9 +607,11 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-    const ruleset = ValidationRuleset
+     const ruleset = (sql: InputBatch) => {
+      return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
+     }
 
     expect(() =>
       ValidationEngine.validate({
@@ -631,7 +651,8 @@ describe("ValidationEngine::validate participants", () => {
 
     sql.commit().execute();
 
-    const ruleset = ValidationRuleset
+     const ruleset = (sql: PostgresInputBatch) => {
+      return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule({
         name: "Positive IDs",
@@ -643,11 +664,12 @@ describe("ValidationEngine::validate participants", () => {
             .asConstraintStatement(),
         ],
       });
+    }
 
     const report = ValidationEngine.validate({
       engine,
       databaseName: "DB1",
-      ruleset,
+      ruleset: ruleset as (sql: InputBatch) => ValidationRuleset,
     });
 
     expect(report.passed).toBe(false);
@@ -689,7 +711,8 @@ describe("ValidationEngine::validate participants", () => {
 
     sql.commit().execute();
 
-    const ruleset = ValidationRuleset
+    const ruleset = (sql: PostgresInputBatch) => {
+      return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule({
         name: "Unique IDs",
@@ -701,11 +724,12 @@ describe("ValidationEngine::validate participants", () => {
             .asConstraintStatement(),
         ],
       });
+    }
 
     const report = ValidationEngine.validate({
       engine,
       databaseName: "DB1",
-      ruleset,
+      ruleset: ruleset as (sql: InputBatch) => ValidationRuleset,
     });
 
     expect(report.passed).toBe(false);
@@ -773,7 +797,8 @@ describe("ValidationEngine::validate participants", () => {
 
     sql.commit().execute();
 
-    const ruleset = ValidationRuleset
+    const ruleset = (sql: PostgresInputBatch) => {
+      return ValidationRuleset
       .create({ name: "Relationship Validation" })
       .withRule({
         name: "Valid Parent References",
@@ -786,11 +811,12 @@ describe("ValidationEngine::validate participants", () => {
             .asConstraintStatement(),
         ],
       });
+    }
 
     const report = ValidationEngine.validate({
       engine,
       databaseName: "DB1",
-      ruleset,
+      ruleset: ruleset as (sql: InputBatch) => ValidationRuleset,
     });
 
     expect(report.passed).toBe(false);
@@ -838,7 +864,8 @@ describe("ValidationEngine::validate rule evaluation", () => {
 
     sql.commit().execute();
 
-    const ruleset = ValidationRuleset
+    const ruleset = (sql: PostgresInputBatch) => {
+      return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule({
         name: "User Constraints",
@@ -856,11 +883,12 @@ describe("ValidationEngine::validate rule evaluation", () => {
             .asConstraintStatement(),
         ],
       });
+    }
 
     const report = ValidationEngine.validate({
       engine,
       databaseName: "DB1",
-      ruleset,
+      ruleset: ruleset as (sql: InputBatch) => ValidationRuleset,
     });
 
     expect(report.violationCount).toBe(1);
@@ -899,7 +927,8 @@ it("does not modify committed database state", () => {
   const databaseBefore = engine.databases.requireByName("DB1");
   const tableBefore = databaseBefore.tables.requireByName("Users");
 
-  const ruleset = ValidationRuleset
+  const ruleset = (sql: PostgresInputBatch) => {
+      return ValidationRuleset
     .create({ name: "User Validation" })
     .withRule({
       name: "Unique IDs",
@@ -911,11 +940,12 @@ it("does not modify committed database state", () => {
           .asConstraintStatement(),
       ],
     });
+  }
 
   const report = ValidationEngine.validate({
     engine,
     databaseName: "DB1",
-    ruleset,
+    ruleset: ruleset as (sql: InputBatch) => ValidationRuleset,
   });
 
   expect(report.failed).toBe(true);
@@ -948,7 +978,8 @@ it("propagates unexpected errors", () => {
 
   sql.commit().execute();
 
-  const ruleset = ValidationRuleset
+  const ruleset = (sql: PostgresInputBatch) => {
+    return ValidationRuleset
     .create({ name: "User Validation" })
     .withRule({
       name: "Missing Table",
@@ -960,12 +991,13 @@ it("propagates unexpected errors", () => {
           .asConstraintStatement(),
       ],
     });
+  }
 
   expect(() =>
     ValidationEngine.validate({
       engine,
       databaseName: "DB1",
-      ruleset,
+      ruleset: ruleset as (sql: InputBatch) => ValidationRuleset,
     }),
   ).toThrow();
 });

@@ -4,7 +4,7 @@ export interface ImportInstructionSpec {
   readonly name: string;
   readonly description?: string;
   readonly category?: string;
-  readonly statements: readonly Statement[]; //alt., InputBatch[]? or maybe InsertIntoStatement[]?
+  readonly statements: readonly Statement[];
 }
 
 export class ImportInstruction {

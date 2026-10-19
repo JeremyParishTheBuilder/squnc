@@ -11,12 +11,19 @@ import type { TabularExpressionInput } from "../statements/dql/TabularExpression
 import type { TableReferenceNode } from "../ast/tabular/TableReferenceNode.js";
 
 export class PostgresInputBatch extends InputBatch {
-  constructor(executeStatement: (stmt: Statement) => void) {
-    super(executeStatement);
+  constructor(
+    executeStatement: (stmt: Statement) => void,
+    isInner: boolean = false,
+  ) {
+    super(executeStatement, isInner);
   }
 
   createInputBatch(): this {
     return new PostgresInputBatch(this.executeStatement) as this;
+  }
+
+  protected createInnerInputBatch(): this {
+    return new PostgresInputBatch(this.executeStatement, true) as this;
   }
 
   begin() {

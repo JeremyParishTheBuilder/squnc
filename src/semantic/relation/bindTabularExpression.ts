@@ -26,6 +26,8 @@ import type { RowView } from "../../relational/RowView.js";
 import { InnerJoinPlanNode } from "../../evaluation/plan/join/InnerJoinNode.js";
 import type { DiscoveryResultsNode } from "../../ast/tabular/DiscoveryResultsNode.js";
 import { discoveryColumns, DiscoveryScanNode } from "../../evaluation/plan/DiscoveryScanNode.js";
+import { DiscoveryResults } from "../../mapping/discovery/DiscoveryResults.js";
+import { DISCOVERY_RESULTS_SOURCE } from "../../types/ExecutionSource.js";
 
 export function bindTabularExpression(
   semantic: SemanticAnalyzer,
@@ -51,13 +53,21 @@ export function bindTabularExpression(
 }
 
 function bindDiscoveryResults(
-  _semantic: SemanticAnalyzer,
+  semantic: SemanticAnalyzer,
   source: TabularExpressionProjection,
 ): BoundRelation {
   const discoveryNode = source.source;
   assertDiscoveryResultsNode(discoveryNode);
 
-  const discoveryResults = discoveryNode.discoveryResults;
+  const discoveryResults =
+    discoveryNode.discoveryResults ??
+    semantic.ctx.sources?.get(DISCOVERY_RESULTS_SOURCE);
+
+  if (!(discoveryResults instanceof DiscoveryResults)) {
+    throw new Error(
+      "Discovery source requires DiscoveryResults.",
+    );
+  }
 
   const columns = discoveryColumns();
 

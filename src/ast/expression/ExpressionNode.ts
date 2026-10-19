@@ -57,8 +57,7 @@ export type ExpressionNodeUnion =
   | TemporalExpressionNode
   | SqlFunctionExpressionNode
   | JsonValueExpressionNode
-  | JsonQueryExpressionNode
-//  | CurrentValueExpressionNode; // TODO, delete?
+  | JsonQueryExpressionNode;
 
 export function isExpressionNodeUnion(
   expr: ExpressionNode,

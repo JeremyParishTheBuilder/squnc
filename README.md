@@ -1,6 +1,6 @@
 # TS-ETL-OLAP
 
-TS-ETL-OLAP is an embedded, in-memory relational engine for importing, editing, validating, querying, and exporting structured datasets.
+SQUNC is an embedded, in-memory relational engine for importing, editing, validating, querying, and exporting structured datasets.
 
 Although originally designed for blockchain registries such as the Cosmos Chain Registry, the architecture is intentionally generic and can be adapted to other structured data sources.
 

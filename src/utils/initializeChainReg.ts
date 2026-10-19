@@ -16,7 +16,7 @@ import {
   isNotNull,
 } from "../mapping/dsl/predicate/functions.js";
 import { ImportRoot } from "../mapping/import/ImportRoot.js";
-import { discovery, path } from "../mapping/import/dsl.js";
+//import { discovery, path } from "../mapping/import/dsl.js";
 import { DiscoveryRoot } from "../mapping/discovery/DiscoveryRoot.js";
 import { SQL_DECIMAL } from "../types/SqlType.js";
 
@@ -26,113 +26,113 @@ EngineRegistry.getInstance().newEngine();
 const engine = EngineRegistry.getInstance().engine();
 const sql: PostgresInputBatch = engine.input() as PostgresInputBatch;
 
-export const exampleChainRegistry_ImportDefinition = () => {
-  const imagesImportMapping = new ImportMapping({
-    tableName: "Images",
-    source: path("images"),
-    fields: {
-      owner: captureScalar("owner"),
-      imageSyncOwner: case_(
-        [
-          {
-            when: every(
-              isNull(value("image_sync.base_denom")),
-              isNotNull(value("image_sync.chain_name")),
-            ),
-            then: concat(literal("Chain:"), value("image_sync.chain_name")),
-          },
-          {
-            when: isNotNull(value("image_sync.chain_name")),
-            then: concat(
-              literal("Asset:"),
-              value("image_sync.chain_name"),
-              literal(":"),
-              value("image_sync.base_denom"),
-            ),
-          },
-        ],
-        literal(null),
-      ),
-    },
-  });
+// export const exampleChainRegistry_ImportDefinition = () => {
+//   const imagesImportMapping = new ImportMapping({
+//     tableName: "Images",
+//     source: path("images"),
+//     fields: {
+//       owner: captureScalar("owner"),
+//       imageSyncOwner: case_(
+//         [
+//           {
+//             when: every(
+//               isNull(value("image_sync.base_denom")),
+//               isNotNull(value("image_sync.chain_name")),
+//             ),
+//             then: concat(literal("Chain:"), value("image_sync.chain_name")),
+//           },
+//           {
+//             when: isNotNull(value("image_sync.chain_name")),
+//             then: concat(
+//               literal("Asset:"),
+//               value("image_sync.chain_name"),
+//               literal(":"),
+//               value("image_sync.base_denom"),
+//             ),
+//           },
+//         ],
+//         literal(null),
+//       ),
+//     },
+//   });
 
-  const logoUrisImportMapping = new ImportMapping({
-    tableName: "Images",
-    source: path("logo_URIs"),
-    fields: {
-      owner: captureScalar("owner"),
-      type: literal("logo"),
-    },
-  });
+//   const logoUrisImportMapping = new ImportMapping({
+//     tableName: "Images",
+//     source: path("logo_URIs"),
+//     fields: {
+//       owner: captureScalar("owner"),
+//       type: literal("logo"),
+//     },
+//   });
 
-  const assetImportMapping = new ImportMapping({
-    source: discovery("asset"),
-    tableName: "Assets",
-    fields: {
-      owner: captureScalar("owner"),
-    },
-    children: [logoUrisImportMapping, imagesImportMapping],
-  });
+//   const assetImportMapping = new ImportMapping({
+//     source: discovery("asset"),
+//     tableName: "Assets",
+//     fields: {
+//       owner: captureScalar("owner"),
+//     },
+//     children: [logoUrisImportMapping, imagesImportMapping],
+//   });
 
-  const assetlistFileImportMapping = new ImportMapping({
-    source: discovery("assetlistFile"),
-    tableName: "Chains",
-    prefix: "AssetlistFile",
-    children: [assetImportMapping],
-  });
+//   const assetlistFileImportMapping = new ImportMapping({
+//     source: discovery("assetlistFile"),
+//     tableName: "Chains",
+//     prefix: "AssetlistFile",
+//     children: [assetImportMapping],
+//   });
 
-  const chainFileImportMapping = new ImportMapping({
-    source: discovery("chainFile"),
-    tableName: "Chains",
-    prefix: "ChainFile",
-    fields: {
-      displayName: concat(
-        current().path("pretty_name").scalar(),
-        literal(" ("),
-        value("chain_id"),
-        literal(")"),
-      ),
-      owner: captureScalar("owner"),
-    },
-    children: [logoUrisImportMapping, imagesImportMapping],
-  });
+//   const chainFileImportMapping = new ImportMapping({
+//     source: discovery("chainFile"),
+//     tableName: "Chains",
+//     prefix: "ChainFile",
+//     fields: {
+//       displayName: concat(
+//         current().path("pretty_name").scalar(),
+//         literal(" ("),
+//         value("chain_id"),
+//         literal(")"),
+//       ),
+//       owner: captureScalar("owner"),
+//     },
+//     children: [logoUrisImportMapping, imagesImportMapping],
+//   });
 
-  const chainDirectoryImportMapping = new ImportMapping({
-    source: discovery("chainDirectory"),
-    tableName: "Chains",
-    flatten: false,
-    prefix: "ChainDirectory",
-    fields: {
-      chainDirectoryName: captureScalar("chainDirectoryName"),
-      networkKind: captureScalar("networkKind"),
-      networkType: captureScalar("networkType"),
-    },
-    children: [chainFileImportMapping, assetlistFileImportMapping],
-  });
+//   const chainDirectoryImportMapping = new ImportMapping({
+//     source: discovery("chainDirectory"),
+//     tableName: "Chains",
+//     flatten: false,
+//     prefix: "ChainDirectory",
+//     fields: {
+//       chainDirectoryName: captureScalar("chainDirectoryName"),
+//       networkKind: captureScalar("networkKind"),
+//       networkType: captureScalar("networkType"),
+//     },
+//     children: [chainFileImportMapping, assetlistFileImportMapping],
+//   });
 
-  const networkTypeImportMapping = new ImportMapping({
-    source: discovery("networkType"),
-    children: [
-      chainDirectoryImportMapping,
-      //ibcConnectionImportMapping,
-    ],
-  });
+//   const networkTypeImportMapping = new ImportMapping({
+//     source: discovery("networkType"),
+//     children: [
+//       chainDirectoryImportMapping,
+//       //ibcConnectionImportMapping,
+//     ],
+//   });
 
-  const networkKindImportMapping = new ImportMapping({
-    source: discovery("networkKind"),
-    children: [networkTypeImportMapping],
-  });
+//   const networkKindImportMapping = new ImportMapping({
+//     source: discovery("networkKind"),
+//     children: [networkTypeImportMapping],
+//   });
 
-  const testRegistryImportMapping = new ImportMapping({
-    tableName: "Registries",
-    fields: {
-      registryName: captureScalar("registryName"),
-    },
-    children: [networkKindImportMapping],
-  });
+//   const testRegistryImportMapping = new ImportMapping({
+//     tableName: "Registries",
+//     fields: {
+//       registryName: captureScalar("registryName"),
+//     },
+//     children: [networkKindImportMapping],
+//   });
 
-  return testRegistryImportMapping;
-};
+//   return testRegistryImportMapping;
+// };
 
 export function exampleChainRegistry_buildDatabase(
   testRegistryDiscoveryRoot: DiscoveryRoot,
@@ -246,6 +246,4 @@ function createTestDatabase() {
   const rows2 = sql.select("*").from("T1").execute();
   console.log(rows2[0]);
   console.log("7");
-
-  engine.rules.autoIncrementColumnPolicy.autoIncrementAllowsExplicitDefault = false;
 }

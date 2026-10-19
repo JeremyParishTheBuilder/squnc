@@ -9,6 +9,7 @@ export class ExecutionContext {
     public readonly tx: Transaction,
     public readonly rules: RulesFacadeShape,
     private currentDb?: string,
+    public readonly sources?: ReadonlyMap<string, unknown>,
   ) {}
 
   public getDatabase(name?: string): Database | undefined {

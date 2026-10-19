@@ -1,21 +1,21 @@
 import { type DiscoveryResult } from "../discovery/DiscoveryResult.js";
 import type { ImportMapping } from "../import/ImportMapping.js";
 import { type ImportResult } from "../import/ImportResult.js";
-import { ObjectImporter } from "../import/ObjectImporter.js";
+//import { ObjectImporter } from "../import/ObjectImporter.js";
 
-export function collectImports(
-  discoveries: readonly DiscoveryResult[],
-  importMappings: readonly ImportMapping[],
-): ImportResult[] {
-  const results: ImportResult[] = [];
+// export function collectImports(
+//   discoveries: readonly DiscoveryResult[],
+//   importMappings: readonly ImportMapping[],
+// ): ImportResult[] {
+//   const results: ImportResult[] = [];
 
-  const objectImporter = new ObjectImporter();
+//   const objectImporter = new ObjectImporter();
 
-  for (const root of discoveries) {
-    for (const importMapping of importMappings) {
-      results.push(...objectImporter.import(root, importMapping));
-    }
-  }
+//   for (const root of discoveries) {
+//     for (const importMapping of importMappings) {
+//       results.push(...objectImporter.import(root, importMapping));
+//     }
+//   }
 
-  return results;
-}
+//   return results;
+// }

@@ -39,6 +39,18 @@ export function cast(expression: ExpressionNode | ColumnValue) {
   return new CastBuilder(expression);
 }
 
+type DiscoveryColumnName =
+  | "resultId"
+  | "parentResultId"
+  | "nodeType"
+  | "identity"
+  | "value"
+  | "captures";
+
+export function property(name: DiscoveryColumnName) {
+  return col(name);
+}
+
 export function json_value(
   source: ExpressionNode,
   path: string,
@@ -59,7 +71,7 @@ export function table(reference: string) {
   return new TableReferenceNode(reference);
 }
 
-export function discovery(results: DiscoveryResults) {
+export function discovery(results?: DiscoveryResults) {
   return new DiscoveryResultsNode(results);
 }
 

@@ -1,4 +1,5 @@
 import type { Engine } from "../engine/Engine.js";
+import type { InputBatch } from "../input/InputBatch.js";
 import {
   ConstraintViolationError,
   type ConstraintViolationParticipant,
@@ -14,12 +15,13 @@ import type { ValidationViolationParticipant } from "./ValidationViolationPartic
 export interface ValidationEngineSpec {
   engine: Engine;
   databaseName: string;
-  ruleset: ValidationRuleset;
+  ruleset: (sql: InputBatch) => ValidationRuleset;
 }
 
 export class ValidationEngine {
   static validate(spec: ValidationEngineSpec): ValidationReport {
-    const results: ValidationRuleResult[] = spec.ruleset.rules.map((rule) =>
+    const sql = spec.engine.input();
+    const results: ValidationRuleResult[] = spec.ruleset(sql).rules.map((rule) =>
       evaluateRule(spec.engine, spec.databaseName, rule),
     );
 

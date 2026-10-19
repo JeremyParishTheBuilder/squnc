@@ -2,45 +2,160 @@
 
 ## Purpose
 
-The Import module transforms immutable `DiscoveryResult`s into relational data.
+The Import module transforms discovered data into relational data.
 
 It is responsible for:
 
-* selecting discovered data for import
-* transforming discovered values
-* preserving import identities
-* assembling logical rows
-* inferring relational structure
-* applying explicit import configuration
+- selecting and transforming Discovery results
+- deriving relational values through SQL expressions
+- associating related results using discovery relationships
+- defining and executing ordered import instructions
+- managing import transactions and reporting execution outcomes
 
-Import does not perform physical discovery, relational constraint enforcement, or business validation.
+Import does not locate external data or define business validation rules. Discovery identifies and describes data; Import determines its relational representation.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
-Discovery
-    │
-    ▼
 DiscoveryResults
-    │
-    ▼
-Import
-    ├── Explicit configuration
-    └── Automatic inference
-    │
-    ▼
-Relational Data
+      |
+      v
+Relational Staging Source
+      |
+      v
+ImportRuleset
+      |
+      v
+ImportInstruction[]
+      |
+      v
+ImportEngine
+      |
+      v
+Relational Database
+      |
+      v
+ImportReport
 ```
 
-Import is the boundary between external structured data and the relational model.
+An import ruleset describes the transformation as ordered instructions containing SQL statements. The ImportEngine executes those statements within a transaction and returns a report.
 
 ---
 
-# Import and Discovery
+## Import Rulesets
 
-Import consumes Discovery results rather than performing discovery itself.
+`ImportRuleset` groups ordered `ImportInstruction` objects into a named import operation.
+
+Rulesets are immutable. `withInstruction()` returns a new ruleset containing the additional instruction.
+
+A ruleset provides:
+
+- a name and optional description
+- an ordered collection of instructions
+- lookup by instruction name
+
+Rulesets describe the transformation declaratively rather than implementing it as a custom traversal of Discovery results.
+
+---
+
+## Import Instructions
+
+An `ImportInstruction` groups SQL statements into a named unit of import work.
+
+Each instruction contains:
+
+- a required name
+- an optional description and category
+- one or more statements
+
+Instructions execute in declaration order, and statements within each instruction execute in order.
+
+An instruction represents a reporting and organizational boundary, not an independent transaction. The ImportEngine owns transaction control.
+
+---
+
+## SQL DSL and Dialect Independence
+
+Ruleset factories receive an `InputBatch` and use its SQL DSL to construct statements.
+
+This separates the description of an import transformation from its execution. The ImportEngine uses the engine's configured input batch rather than directly depending on a particular SQL dialect.
+
+The ruleset factory is evaluated before transaction execution begins. Consequently, errors encountered while constructing a ruleset are distinct from statement-execution failures and do not produce an `ImportReport`.
+
+---
+
+## Discovery Staging Integration
+
+Import accesses discovered data through the relational staging source exposed by `discovery()`.
+
+The staging source presents each `DiscoveryResult` as a row with these columns:
+
+| Column | SQL type | Nullable |
+|---|---|---|
+| `resultId` | `SQL_INTEGER` | No |
+| `parentResultId` | `SQL_INTEGER` | Yes |
+| `nodeType` | `SQL_VARCHAR` | No |
+| `identity` | `SQL_JSON` | No |
+| `value` | `SQL_JSON` | Yes |
+| `captures` | `SQL_JSON` | No |
+
+The source adapts discovery values, identities, and captures into structured values accessible through the query expression system.
+
+Import can filter results by `nodeType`, extract fields from structured values, and associate related results through `resultId` and `parentResultId`. These relationships do not depend on physical Discovery identities or nested child objects.
+
+A ruleset can use an explicitly supplied `DiscoveryResults` collection or the discovery source supplied through statement execution options by the ImportEngine.
+
+Discovery captures remain available as metadata, but values derived for relational output generally belong in Import expressions.
+
+---
+
+## Import Execution
+
+`ImportEngine.import()` receives an engine, target database name, optional Discovery results, and a ruleset factory.
+
+Execution proceeds as follows:
+
+1. Construct the ruleset using the engine's input batch.
+2. Reject instructions containing transaction-control or database-selection statements managed by the ImportEngine.
+3. Select the target database.
+4. Begin a transaction.
+5. Execute instructions and their statements in order.
+6. Commit if all statements succeed; otherwise, roll back and return a failed report.
+
+Database creation is explicit. The caller must create the target database beforehand or include a database-creation instruction in the ruleset.
+
+The ImportEngine passes the optional Discovery results to statement execution as the `discovery` source. If a statement requires Discovery results but none were supplied, the resulting execution error is reported as a failed instruction.
+
+---
+
+## Import Reports
+
+`ImportReport` summarizes the outcome of an import operation.
+
+Each `ImportInstructionResult` records the instruction, its status, and, when applicable, the error and zero-based index of the failed statement.
+
+Instruction statuses are:
+
+- `succeeded` — all statements in the instruction completed.
+- `failed` — a statement failed during execution.
+- `notExecuted` — the instruction was skipped after an earlier failure.
+
+After a statement failure, subsequent instructions are marked `notExecuted`, and the transaction is rolled back.
+
+The report exposes:
+
+- `committed` — whether the transaction committed
+- `passed` — whether the transaction committed and every instruction succeeded
+- `failed` — the inverse of `passed`
+- `failedInstructions` and `failedInstructionCount` — instructions that failed during execution
+
+The report covers execution outcomes, not every possible error. Failures during ruleset construction, pre-execution checks, database selection, or transaction initialization may throw before a report is returned.
+
+---
+
+## Relationship to Discovery and Validation
 
 Discovery answers:
 
@@ -50,158 +165,20 @@ Import answers:
 
 > How should discovered data become relational data?
 
-The boundary is:
+Validation answers:
 
-```text
-Discovery
-    │
-    │ DiscoveryResults
-    ▼
-Import
-```
+> Does the resulting relational data satisfy the required rules?
+
+These responsibilities remain separate. Import constructs relational data; Validation evaluates that data against defined constraints and rules.
 
 ---
 
-# Import Identity
+## Design Principles
 
-Import identities associate discovered contributions with logical relational rows.
-
-Import identity is independent of business keys.
-
-Multiple discovered sources may therefore contribute to the same logical row:
-
-```text
-chain.json ───────┐
-                  ├── logical row
-assetlist.json ──┘
-```
-
-Child entities may establish independent identities for child tables.
-
-This allows row assembly without requiring business keys to exist during import.
-
----
-
-# Explicit Import
-
-Import supports explicit configuration for cases where the maintainer needs to control relational representation.
-
-Explicit configuration may determine:
-
-* target tables
-* selected or derived fields
-* child relationships
-* naming or namespaces
-* other mapping behaviour
-
-Explicit configuration overrides automatic inference.
-
----
-
-# Automatic Inference
-
-Import retains inference for common structured-data scenarios.
-
-Inference may:
-
-* turn object properties into columns
-* flatten nested objects
-* turn repeated arrays into child relations
-* infer table and column names
-* infer appropriate row identities
-
-An entire discovered document can therefore be imported without requiring every column to be specified manually.
-
-Explicit mappings can selectively override inferred behaviour or assign structures to separate tables.
-
----
-
-# Schema Inference
-
-Schema inference belongs to Import because it determines how structured imported data becomes relational schema.
-
-It may infer:
-
-* tables
-* columns
-* types
-* flattened object structure
-* array relations
-* related relational structure
-
-The resulting schema and data are materialized through the Relational layer.
-
----
-
-# SQL-Based Direction
-
-Import is moving toward using the common SQL AST, DSL, semantic analysis, and execution infrastructure rather than maintaining a parallel transformation language.
-
-The intended model is conceptually:
-
-```sql
-INSERT INTO Assets (...)
-SELECT ...
-FROM discovery_results
-WHERE ...;
-```
-
-This allows Import to reuse common SQL capabilities such as:
-
-* expressions and predicates
-* `CASE`
-* `CAST`
-* JSON extraction
-* `UNION ALL`
-* joins
-* `INSERT ... SELECT`
-
-Import-specific AST or expression concepts should be removed when equivalent SQL concepts are sufficient.
-
----
-
-# Staging
-
-The long-term architecture may expose Discovery results through relational staging structures.
-
-Conceptually:
-
-```text
-DiscoveryResults
-      │
-      ▼
-Staging
-      │
-      ▼
-SQL Import
-      │
-      ▼
-Relational Data
-```
-
-Staging must preserve the information Import requires, including discovered values, identities, captures, and relevant source relationships, without making Discovery itself dependent on the relational model.
-
----
-
-## Expressions
-
-Expressions provide a common language across discovery and import.
-
-Import expressions can evaluate against `ImportContext` and its captured source values. `source()` retrieves the current import source, while `JSON_VALUE(source, path)` extracts a scalar value from a structured JSON value.
-
-`JSON_VALUE` always produces a scalar `ColumnValue`; object and array results are rejected. JSON paths currently support the implemented `JsonValuePath` syntax only.
-
-Expressions are evaluated within strongly typed execution contexts and are reusable throughout the Mapping module.
-
----
-
-# Architectural Boundaries
-
-* Discovery owns physical traversal and discovery.
-* Import owns relational transformation and inference.
-* Relational owns immutable relational state and structural correctness.
-* Validation owns business correctness.
-* Import identity remains independent of business keys.
-* Explicit configuration overrides inference.
-* Automatic inference remains available; Import is not restricted to column-by-column mappings.
-* SQL is the long-term common transformation language for Import where practical.
+- Import transforms discovered data through declarative SQL statements.
+- Rulesets and instructions define deterministic execution order.
+- Discovery results are consumed through a relational staging interface.
+- Result IDs establish Discovery relationships; physical and relational identities remain distinct.
+- The ImportEngine owns transaction management and execution reporting.
+- Database creation is explicit rather than an implicit side effect.
+- Import transformation and business validation remain separate concerns.
