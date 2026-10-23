@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { JsonValueExpression } from '../../src/evaluation/expression/JsonValueExpression.js';
+import { JsonValueExpression } from '../../src/evaluation/expression/structuredValues/JsonValueExpression.js';
 import { JsonValuePath } from '../../src/mapping/import/JsonValuePath.js';
 import { isStructuredContainer, isStructuredValue } from '../../src/mapping/value/StructuredValue.js';
 import { CastExpression } from '../../src/evaluation/expression/CastExpression.js';
 import { SQL_DECIMAL } from '../../src/types/SqlType.js';
 import { LiteralExpression } from '../../src/evaluation/expression/LiteralExpression.js';
-import { JsonQueryExpression } from '../../src/evaluation/expression/JsonQueryExpression.js';
+import { JsonQueryExpression } from '../../src/evaluation/expression/structuredValues/JsonQueryExpression.js';
 
 describe("Expression::JsonValue", () => {
   it("extracts a top-level scalar", () => {

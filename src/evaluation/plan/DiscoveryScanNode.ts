@@ -31,6 +31,7 @@ function discoveryResultAsRowView(
       adapted.nodeType,
       adapted.identity,
       adapted.value,
+      adapted.metadata,
       adapted.captures,
     ],
   };
@@ -43,6 +44,7 @@ export function discoveryColumns(): QueryColumn[] {
     { name: "nodeType", type: SQL_VARCHAR, nullable: false },
     { name: "identity", type: SQL_JSON, nullable: false },
     { name: "value", type: SQL_JSON, nullable: true },
+    { name: "metadata", type: SQL_JSON, nullable: true },
     { name: "captures", type: SQL_JSON, nullable: false },
   ];
 }

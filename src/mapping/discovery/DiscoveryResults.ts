@@ -1,6 +1,7 @@
-import type { CaptureValue } from "../value/CaptureValue.js";
-import type { DiscoveryValue } from "../value/DiscoveryValue.js";
+import type { StructuredValue } from "../value/StructuredValue.js";
 import type { DiscoveryIdentity } from "./DiscoveryIdentity.js";
+import type { DiscoveryMetadata } from "./DiscoveryMetadata.js";
+import type { DiscoveryPayload } from "./DiscoveryPayload.js";
 import { DiscoveryResult, DiscoveryResultId } from "./DiscoveryResult.js";
 
 export class DiscoveryResults {
@@ -15,8 +16,9 @@ export class DiscoveryResults {
     parentResultId: DiscoveryResultId | null,
     nodeType: string,
     identity: DiscoveryIdentity,
-    value: DiscoveryValue,
-    captures: Map<string, CaptureValue>,
+    value: DiscoveryPayload,
+    metadata: DiscoveryMetadata,
+    captures: Map<string, StructuredValue>,
   ): DiscoveryResult {
     const resultId = this.getNextResultId();
 
@@ -26,6 +28,7 @@ export class DiscoveryResults {
       nodeType,
       identity,
       value,
+      metadata,
       captures,
     );
 

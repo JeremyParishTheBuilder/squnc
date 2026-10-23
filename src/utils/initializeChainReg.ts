@@ -2,19 +2,18 @@ import { EngineRegistry } from "../engine/EngineRegistry.js";
 import { type PostgresInputBatch } from "../input/PostgresInputBatch.js";
 import { ImportMapping } from "../mapping/import/ImportMapping.js";
 import { ImportPipeline } from "../mapping/pipeline/ImportPipeline.js";
-import {
-  captureScalar,
-  case_,
-  concat,
-  current,
-  value,
-  literal,
-} from "../mapping/dsl/expression/functions.js";
-import {
-  every,
-  isNull,
-  isNotNull,
-} from "../mapping/dsl/predicate/functions.js";
+// import {
+//   captureScalar,
+//   case_,
+//   concat,
+//   value,
+//   literal,
+// } from "../mapping/dsl/expression/functions.js";
+// import {
+//   every,
+//   isNull,
+//   isNotNull,
+// } from "../mapping/dsl/predicate/functions.js";
 import { ImportRoot } from "../mapping/import/ImportRoot.js";
 //import { discovery, path } from "../mapping/import/dsl.js";
 import { DiscoveryRoot } from "../mapping/discovery/DiscoveryRoot.js";

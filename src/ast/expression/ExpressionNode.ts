@@ -29,7 +29,6 @@ import type {
   JsonValueExpressionNode,
   ResolvedJsonValueExpressionNode,
 } from "./JsonValueExpressionNode.js";
-import type { CurrentValueExpressionNode } from "./CurrentValueExpressionNode.js";
 import type { 
   JsonQueryExpressionNode,
   ResolvedJsonQueryExpressionNode,

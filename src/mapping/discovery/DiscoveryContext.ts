@@ -1,15 +1,13 @@
-import { type ColumnValue } from "../../types/ColumnValue.js";
-import { type CaptureContext } from "./CaptureContext.js";
 import type { DiscoveryValue } from "../value/DiscoveryValue.js";
-import type { CaptureValue } from "../value/CaptureValue.js";
 import type { DiscoveryIdentity, DiscoveryIdentityPart } from "./DiscoveryIdentity.js";
-import type { DiscoveryResult } from "./DiscoveryResult.js";
+import type { StructuredValue } from "../value/StructuredValue.js";
 
-export class DiscoveryContext implements CaptureContext {
+export class DiscoveryContext {
   constructor(
     readonly current: DiscoveryValue,
-    readonly captures: ReadonlyMap<string, CaptureValue> = new Map(),
+    readonly captures: ReadonlyMap<string, StructuredValue> = new Map(),
     readonly identity: DiscoveryIdentity,
+    readonly payload: StructuredValue = null,
   ) {}
 
   withCurrent(current: DiscoveryValue): DiscoveryContext {
@@ -17,14 +15,16 @@ export class DiscoveryContext implements CaptureContext {
       current,
       this.captures,
       this.identity,
+      this.payload,
     );
   }
 
-  withCapture(name: string, value: CaptureValue): DiscoveryContext {
+  withCapture(name: string, value: StructuredValue): DiscoveryContext {
     return new DiscoveryContext(
       this.current,
       new Map([...this.captures, [name, value]]),
       this.identity,
+      this.payload,
     );
   }
 
@@ -33,6 +33,16 @@ export class DiscoveryContext implements CaptureContext {
       this.current,
       this.captures,
       this.identity.append(...parts),
+      this.payload,
+    );
+  }
+
+  withPayload(payload: StructuredValue): DiscoveryContext {
+    return new DiscoveryContext(
+      this.current,
+      this.captures,
+      this.identity,
+      payload
     );
   }
 }

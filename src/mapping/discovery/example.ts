@@ -1,12 +1,11 @@
 import {
   basename,
   capture,
-  captureScalar,
   concat,
-  current,
+  json_value,
   literal,
+  payload,
   propertyName,
-  value,
 } from "../dsl/expression/functions.js";
 import {
   contains,
@@ -41,16 +40,31 @@ export const exampleChainRegistry_DiscoveryDefinition = () => {
     matcher: isNull(literal(null)),
     nodeType: "asset",
     captures: {
-      base: value("base"),
-      owner: concat( // this 'owner' will soon instead be defined by import 
+      base: json_value(payload(), "$.base"),
+      owner: concat(
         literal("Asset:"),
-        captureScalar("chainDirectoryName"),
+        json_value(capture("chain"), "$"),
         literal(":"),
-        current().path("base").scalar(),
+        json_value(payload(), "$.base"),
       ),
     },
     children: [],
   });
+  // const assetNode = new DiscoveryNode({
+  //   navigator: new StructuredArrayNavigator(),
+  //   matcher: isNull(literal(null)),
+  //   nodeType: "asset",
+  //   captures: {
+  //     base: value("base"),
+  //     owner: concat(
+  //       literal("Asset:"),
+  //       capture("chainDirectoryName"),
+  //       literal(":"),
+  //       json_value(payload(), "$.base"),
+  //     ),
+  //   },
+  //   children: [],
+  // });
 
   const assetsArrayNode = new DiscoveryNode({
     navigator: new StructuredObjectNavigator(),
@@ -67,23 +81,29 @@ export const exampleChainRegistry_DiscoveryDefinition = () => {
     children: [assetsArrayNode],
   });
 
+  const imagesDirectoryNode = new DiscoveryNode({
+    navigator: new DirectoryNavigator(),
+    matcher: every(isDirectory(), basename().eq("images")),
+    nodeType: "chainFile",
+    children: [/*imageFileNode*/],
+  });
+
   const chainFileNode = new DiscoveryNode({
     navigator: new DirectoryNavigator(),
     matcher: every(isFile(), basename().eq("chain.json")),
     decoder: new JsonDecoder(),
     nodeType: "chainFile",
     captures: {
-      chain: current(),
       owner: concat(
         literal("Chain:"),
-        capture("chain").path("chain_name").scalar(),
+        json_value(capture("chain"), "$"),
       ),
     },
     children: [],
   });
 
   const chainCollection = new DiscoveryNode({
-    navigator: new DirectoryNavigator(),
+    navigator: new DirectoryNavigator(), // was informing how to navigate the parent node's navigation object
     matcher: contains(
       some(
         every(isFile(), basename().eq("chain.json")),
@@ -93,7 +113,7 @@ export const exampleChainRegistry_DiscoveryDefinition = () => {
     children: [chainFileNode, assetlistFileNode],
     nodeType: "chainDirectory",
     captures: {
-      chainDirectoryName: current().path("_basename"),
+      chain: basename(),
     },
   });
 

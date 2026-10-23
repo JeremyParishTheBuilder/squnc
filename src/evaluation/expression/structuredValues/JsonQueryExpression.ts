@@ -1,10 +1,10 @@
-import type { JsonValuePath } from "../../mapping/import/JsonValuePath.js";
+import type { JsonValuePath } from "../../../mapping/import/JsonValuePath.js";
 import {
   isStructuredContainer,
   type StructuredContainer,
   type StructuredValue
-} from "../../mapping/value/StructuredValue.js";
-import type { Expression } from "./Expression.js";
+} from "../../../mapping/value/StructuredValue.js";
+import type { Expression } from "../Expression.js";
 
 export class JsonQueryExpression<TContext> implements Expression<
   TContext,
@@ -20,7 +20,7 @@ export class JsonQueryExpression<TContext> implements Expression<
     const result = this.path.resolve(value);
 
     if (result === undefined) {
-      throw new Error(`JSON_VALUE path did not resolve: ${this.path}`);
+      throw new Error(`JSON_QUERY path did not resolve: ${this.path}`);
     }
 
     if (!isStructuredContainer(result)) {

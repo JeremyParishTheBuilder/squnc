@@ -139,7 +139,7 @@ Matching belongs to Discovery because it determines what is found, rather than h
 
 Captures preserve values or metadata obtained during discovery.
 
-A result stores captures as a `Map<string, CaptureValue>`. Captures may describe names or other contextual facts that downstream processing can use.
+A result stores captures as a `Map<string, StructuredValue>`. Captures may describe names or other contextual facts that downstream processing can use.
 
 Captures should support describing discovered data, not become a general-purpose replacement for Import transformations. Fields derived for relational output should generally be computed during Import.
 

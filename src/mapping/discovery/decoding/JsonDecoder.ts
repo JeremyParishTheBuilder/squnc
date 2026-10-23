@@ -1,23 +1,43 @@
 import { File } from "../nodejs/File.js";
 import type { DiscoveryValue } from "../../value/DiscoveryValue.js";
-import type { DiscoveryDecoder } from "./DiscoveryDecoder.js";
-import fs from "fs";
-import type { StructuredObject } from "../../value/StructuredValue.js";
+import type { DecodeResult, DiscoveryDecoder } from "./DiscoveryDecoder.js";
+import type { StructuredValue } from "../../value/StructuredValue.js";
 
-export class JsonDecoder implements DiscoveryDecoder<File, StructuredObject> {
+export class JsonDecoder implements DiscoveryDecoder<File> {
   accepts(value: DiscoveryValue): value is File {
     return value instanceof File;
   }
 
-  decode(value: File): StructuredObject | null {
+  decode(value: File): DecodeResult {
     if (!value.basename.endsWith(".json")) {
-      return null;
+      return {
+        status: "failed",
+        operation: "read",
+        message: `Expected a JSON file, got '${value.basename}'.`,
+      };
+    }
+
+    const contents = value.contents();
+
+    if (contents === null) {
+      return {
+        status: "failed",
+        operation: "read",
+        message: `Could not read file '${value.fullPath}'.`,
+      };
     }
 
     try {
-      return JSON.parse(fs.readFileSync(value.fullPath, "utf8"));
+      return {
+        status: "success",
+        value: JSON.parse(contents) as StructuredValue,
+      };
     } catch {
-      return null;
+      return {
+        status: "failed",
+        operation: "decode",
+        message: `Invalid JSON in '${value.fullPath}'.`,
+      };
     }
   }
 }

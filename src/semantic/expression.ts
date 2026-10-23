@@ -43,8 +43,8 @@ import type { TemporalExpressionNode } from "../ast/expression/TemporalExpressio
 import type { SqlFunctionExpressionNode } from "../ast/expression/SqlFunctionExpressionNode.js";
 import type { ColumnResolver } from "./relation/ColumnResolver.js";
 import type { ColumnBinder } from "./relation/ColumnBinder.js";
-import { JsonValueExpression } from "../evaluation/expression/JsonValueExpression.js";
-import { JsonQueryExpression } from "../evaluation/expression/JsonQueryExpression.js";
+import { JsonValueExpression } from "../evaluation/expression/structuredValues/JsonValueExpression.js";
+import { JsonQueryExpression } from "../evaluation/expression/structuredValues/JsonQueryExpression.js";
 import { ResolvedJsonValueExpressionNode } from "../ast/expression/JsonValueExpressionNode.js";
 import { ResolvedJsonQueryExpressionNode } from "../ast/expression/JsonQueryExpressionNode.js";
 

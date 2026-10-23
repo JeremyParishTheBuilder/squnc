@@ -1,9 +1,9 @@
-import type { CaptureValue } from "../value/CaptureValue.js";
+import type { DiscoveryValue } from "../value/DiscoveryValue.js";
 
 export class PropertyPath {
   constructor(readonly parts: readonly string[]) {}
 
-  resolve(value: CaptureValue): CaptureValue {
+  resolve(value: DiscoveryValue): DiscoveryValue {
     let current = value;
 
     for (const part of this.parts) {
@@ -11,7 +11,7 @@ export class PropertyPath {
         return null;
       }
 
-      current = (current as Record<string, unknown>)[part] as CaptureValue;
+      current = (current as Record<string, unknown>)[part] as DiscoveryValue;
     }
 
     return current;

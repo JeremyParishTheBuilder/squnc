@@ -1,10 +1,6 @@
-import type { CaptureValue } from "../value/CaptureValue.js";
-import type { DiscoveryValue } from "../value/DiscoveryValue.js";
-import { isStructuredElement, isStructuredProperty, isStructuredValue, type PrimitiveValue, type StructuredArray, type StructuredObject, type StructuredValue } from "../value/StructuredValue.js";
+import { type PrimitiveValue, type StructuredArray, type StructuredObject, type StructuredValue } from "../value/StructuredValue.js";
+import type { DiscoveryMetadata } from "./DiscoveryMetadata.js";
 import type { DiscoveryResult } from "./DiscoveryResult.js";
-import { Directory } from "./nodejs/Directory.js";
-import { File } from "./nodejs/File.js";
-import type { FsObject } from "./nodejs/FsObject.js";
 
 export function adaptDiscoveryResult(
   result: DiscoveryResult,
@@ -14,7 +10,8 @@ export function adaptDiscoveryResult(
     parentResultId: result.parentResultId,
     nodeType: result.nodeType,
     identity: arrayToStructuredArray(result.identity.parts),
-    value: adaptDiscoveryValue(result.value),
+    value: result.value,
+    metadata: adaptMetadata(result.metadata),
     captures: mapToStructuredObject(result.captures),
   };
 }
@@ -26,104 +23,61 @@ function arrayToStructuredArray(
 }
 
 function mapToStructuredObject(
-  values: ReadonlyMap<string, CaptureValue>,
+  values: ReadonlyMap<string, StructuredValue>,
 ): StructuredObject {
   const output: StructuredObject = {};
 
   for (const [key, value] of values) {
-    output[key] = adaptDiscoveryValue(value);
+    output[key] = value;
   }
 
   return output;
 }
 
-function adaptDiscoveryValue(
-  value: DiscoveryValue,
+export function adaptMetadata(
+  metadata: DiscoveryMetadata,
 ): StructuredValue {
-  if (isStructuredProperty(value)) {
-    return {
-      key: value.key,
-      value: adaptDiscoveryValue(value.value),
+  const result: StructuredObject = {};
+
+  if (metadata.source) {
+    result.source = {
+      kind: metadata.source.kind,
+      ...(metadata.source.basename !== undefined
+        ? { basename: metadata.source.basename }
+        : {}),
+      ...(metadata.source.fullPath !== undefined
+        ? { fullPath: metadata.source.fullPath }
+        : {}),
     };
   }
 
-  if (isStructuredElement(value)) {
-    return {
-      index: value.index,
-      value: adaptDiscoveryValue(value.value),
+  if (metadata.position) {
+    result.position =
+      metadata.position.kind === "property"
+        ? {
+            kind: "property",
+            key: metadata.position.key,
+          }
+        : {
+            kind: "element",
+            index: metadata.position.index,
+          };
+  }
+
+  if (metadata.processing) {
+    result.processing = {
+      status: metadata.processing.status,
+      ...(metadata.processing.operation !== undefined
+        ? { operation: metadata.processing.operation }
+        : {}),
+      ...(metadata.processing.decoder !== undefined
+        ? { decoder: metadata.processing.decoder }
+        : {}),
+      ...(metadata.processing.message !== undefined
+        ? { message: metadata.processing.message }
+        : {}),
     };
   }
 
-  if (isStructuredValue(value)) {
-    return value;
-  }
-
-  if (value instanceof Directory) {
-    return adaptDirectory(value);
-  }
-
-  if (value instanceof File) {
-    return adaptFile(value);
-  }
-
-  throw new Error("Unsupported DiscoveryValue");
-}
-
-function adaptDirectory(directory: Directory): StructuredObject {
-  const contents = directory.contents;
-
-  return {
-    kind: "directory",
-    basename: directory.basename,
-    fullPath: directory.fullPath,
-    contents:
-      contents === null
-        ? null
-        : contents.map(adaptFsObjectLeaf),
-  };
-}
-
-function adaptFsObjectLeaf(
-  fsObject: FsObject,
-): StructuredObject {
-  if (fsObject instanceof Directory) {
-    return {
-      kind: "directory",
-      basename: fsObject.basename,
-      fullPath: fsObject.fullPath,
-    };
-  }
-
-  if (fsObject instanceof File) {
-    return {
-      kind: "file",
-      basename: fsObject.basename,
-      fullPath: fsObject.fullPath,
-    };
-  }
-
-  throw new Error("Unsupported FsObject type");
-}
-
-function adaptFile(file: File): StructuredObject {
-  const contents = file.contents;
-
-  if (contents !== null) {
-    assertIsStructuredValue(contents);
-  }
-
-  return {
-    kind: "file",
-    basename: file.basename,
-    fullPath: file.fullPath,
-    contents,
-  };
-}
-
-function assertIsStructuredValue(
-  value: unknown,
-): asserts value is StructuredValue {
-  if (!isStructuredValue(value)) {
-    throw new Error("File contents are not a valid StructuredValue");
-  }
+  return result;
 }

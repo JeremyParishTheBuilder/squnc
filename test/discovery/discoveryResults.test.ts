@@ -15,6 +15,7 @@ describe('Discovery::DiscoveryResults', () => {
       "registry",
       identity,
       "test-value",
+      {},
       captures,
     );
 
@@ -30,6 +31,7 @@ describe('Discovery::DiscoveryResults', () => {
       "registry",
       identity,
       "first",
+      {},
       captures,
     );
 
@@ -38,6 +40,7 @@ describe('Discovery::DiscoveryResults', () => {
       "registry",
       identity,
       "second",
+      {},
       captures,
     );
 
@@ -52,6 +55,7 @@ describe('Discovery::DiscoveryResults', () => {
       "registry",
       identity,
       "parent",
+      {},
       captures,
     );
 
@@ -60,6 +64,7 @@ describe('Discovery::DiscoveryResults', () => {
       "chainDirectory",
       identity,
       "child",
+      {},
       captures,
     );
 
@@ -74,6 +79,7 @@ describe('Discovery::DiscoveryResults', () => {
       "chainFile",
       identity,
       "test-value",
+      {},
       captures,
     );
 

@@ -1,22 +1,25 @@
 import { type ColumnValue } from "../../../types/ColumnValue.js";
-import { CaptureScalarExpression } from "../../../evaluation/expression/CaptureScalarExpression.js";
 import { LiteralExpression } from "../../../evaluation/expression/LiteralExpression.js";
 import { ConcatExpression } from "../../../evaluation/expression/ConcatExpression.js";
-import { BasenameExpression } from "../../../evaluation/expression/BasenameExpression.js";
+import { BasenameExpression } from "../../../evaluation/expression/fs/BasenameExpression.js";
 import {
   type CaseBranch,
   CaseExpression,
 } from "../../../evaluation/expression/CaseExpression.js";
 import { type Expression } from "../../../evaluation/expression/Expression.js";
-import { PropertyNameExpression } from "../../../evaluation/expression/PropertyNameExpression.js";
-import { CurrentValueExpression } from "../../../evaluation/expression/CurrentValueExpression.js";
-import type { DiscoveryContext } from "../../discovery/DiscoveryContext.js";
-import type { DiscoveryValue } from "../../value/DiscoveryValue.js";
+import { DiscoveryContext } from "../../discovery/DiscoveryContext.js";
 import { ScalarExpressionBuilder } from "./ScalarExpressionBuilder.js";
-import { CaptureExpression } from "../../../evaluation/expression/CaptureExpression.js";
-import type { CaptureContext } from "../../discovery/CaptureContext.js";
-import type { CaptureValue } from "../../value/CaptureValue.js";
-import { ValueExpressionBuilder } from "./ValueExpressionBuilder.js";
+import { CaptureExpression, CaptureScalarExpression } from "../../../evaluation/expression/discovery/CaptureExpression.js";
+import { isStructuredElement, isStructuredProperty, type StructuredValue } from "../../value/StructuredValue.js";
+import { PayloadExpression } from "../../../evaluation/expression/discovery/PayloadExpression.js";
+import { PropertyNameExpression } from "../../../evaluation/expression/structuredValues/PropertyNameExpression.js";
+import { DiscoveryContextExpression } from "../../../evaluation/expression/discovery/DiscoveryContextExpression.js";
+import { ElementIndexExpression } from "../../../evaluation/expression/structuredValues/ElementIndexExpression.js";
+import { requireFsObject, type FsObject } from "../../discovery/nodejs/FsObject.js";
+import { JsonValueExpression } from "../../../evaluation/expression/structuredValues/JsonValueExpression.js";
+import { JsonValuePath } from "../../import/JsonValuePath.js";
+import { JsonQueryExpression } from "../../../evaluation/expression/structuredValues/JsonQueryExpression.js";
+import { ExpressionBuilder } from "./ExpressionBuilder.js";
 
 export function case_<TContext>(
   branches: CaseBranch<TContext>[],
@@ -25,20 +28,45 @@ export function case_<TContext>(
   return new ScalarExpressionBuilder(new CaseExpression(branches, elseExpr));
 }
 
-export function value(path: string) {
-  return current().path(path).scalar();
-}
-
 export function literal(value: ColumnValue) {
   return new ScalarExpressionBuilder(new LiteralExpression(value));
 }
 
 export function basename() {
-  return new ScalarExpressionBuilder(new BasenameExpression());
+  return new ScalarExpressionBuilder(
+    new DiscoveryContextExpression(
+      new BasenameExpression(),
+      (context) => requireFsObject(context.current),
+    )
+  );
 }
 
 export function propertyName() {
-  return new ScalarExpressionBuilder(new PropertyNameExpression());
+  return new ScalarExpressionBuilder(
+    new DiscoveryContextExpression(
+      new PropertyNameExpression(),
+      (context) => {
+        if (!isStructuredProperty(context.current)) {
+          throw new Error("Expected a structured property.");
+        }
+        return context.current;
+      },
+    )
+  );
+}
+
+export function elementIndex() {
+  return new ScalarExpressionBuilder(
+    new DiscoveryContextExpression(
+      new ElementIndexExpression(),
+      (context) => {
+        if (!isStructuredElement(context.current)) {
+          throw new Error("Expected a structured property.");
+        }
+        return context.current;
+      },
+    )
+  );
 }
 
 export function concat<TContext>(
@@ -49,18 +77,42 @@ export function concat<TContext>(
   );
 }
 
-export function current() {
-  return new ValueExpressionBuilder<DiscoveryContext, DiscoveryValue>(
-    new CurrentValueExpression(),
-  );
+export function capture(name: string) {
+  return new ExpressionBuilder(new CaptureExpression(name));
 }
 
 export function captureScalar(name: string) {
-  return new ScalarExpressionBuilder(new CaptureScalarExpression(name));
+  return new ScalarExpressionBuilder(
+    new CaptureScalarExpression(
+      new CaptureExpression(name)
+    ),
+  );
 }
 
-export function capture<TContext extends CaptureContext>(
-  name: string,
-): ValueExpressionBuilder<TContext, CaptureValue> {
-  return new ValueExpressionBuilder(new CaptureExpression<TContext>(name));
+export function payload() {
+  return new ExpressionBuilder(new PayloadExpression());
+}
+
+export function json_value<TContext>(
+  source: ExpressionBuilder<TContext, StructuredValue>,
+  path: string,
+): ScalarExpressionBuilder<TContext> {
+  return new ScalarExpressionBuilder(
+    new JsonValueExpression<TContext>(
+      source,
+      JsonValuePath.parse(path)
+    )
+  );
+}
+
+export function json_query<TContext>(
+  source: ExpressionBuilder<TContext, StructuredValue>,
+  path: string,
+): ExpressionBuilder<TContext, StructuredValue> {
+  return new ExpressionBuilder(
+    new JsonQueryExpression<TContext>(
+      source,
+      JsonValuePath.parse(path)
+    )
+  );
 }

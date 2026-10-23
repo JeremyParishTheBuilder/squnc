@@ -1,5 +1,5 @@
-import type { CaptureValue } from "../value/CaptureValue.js";
+import type { StructuredValue } from "../value/StructuredValue.js";
 
 export interface CaptureContext {
-  captures: ReadonlyMap<string, CaptureValue>;
+  captures: ReadonlyMap<string, StructuredValue>;
 }

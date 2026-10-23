@@ -1,10 +1,10 @@
-import type { JsonValuePath } from "../../mapping/import/JsonValuePath.js";
+import type { JsonValuePath } from "../../../mapping/import/JsonValuePath.js";
 import {
   isPrimitiveValue,
   type PrimitiveValue,
   type StructuredValue
-} from "../../mapping/value/StructuredValue.js";
-import type { Expression } from "./Expression.js";
+} from "../../../mapping/value/StructuredValue.js";
+import type { Expression } from "../Expression.js";
 
 export class JsonValueExpression<TContext> implements Expression<
   TContext,

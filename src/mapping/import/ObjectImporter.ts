@@ -1,7 +1,7 @@
 import { type ColumnValue, isColumnValue } from "../../types/ColumnValue.js";
 import { toPascalCase } from "../../utils/format.js";
 import { type DiscoveryResult } from "../discovery/DiscoveryResult.js";
-import type { CaptureValue } from "../value/CaptureValue.js";
+//import type { CaptureValue } from "../value/CaptureValue.js";
 import {
   isStructuredValue,
   type StructuredValue,

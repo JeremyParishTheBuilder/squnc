@@ -1,4 +1,3 @@
-import type { ColumnValue } from "../../../types/ColumnValue.js";
 import type { DiscoveryValue } from "../../value/DiscoveryValue.js";
 import type { DiscoveryNavigator } from "./DiscoveryNavigator.js";
 import type {
