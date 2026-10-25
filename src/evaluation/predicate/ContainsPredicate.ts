@@ -1,15 +1,17 @@
-import { Directory } from "../../mapping/discovery/Directory.js";
-import { type FsObject } from "../../mapping/discovery/FsObject.js";
+import type { DiscoveryContext } from "../../mapping/discovery/DiscoveryContext.js";
+import { Directory } from "../../mapping/discovery/nodejs/Directory.js";
 import { type Predicate } from "./Predicate.js";
 
-export class ContainsPredicate implements Predicate<FsObject> {
-  constructor(private predicate: Predicate<FsObject>) {}
+export class ContainsPredicate implements Predicate<DiscoveryContext> {
+  constructor(private predicate: Predicate<DiscoveryContext>) {}
 
-  evaluate(obj: FsObject): boolean {
-    if (!(obj instanceof Directory)) {
+  evaluate(context: DiscoveryContext): boolean {
+    if (!(context.current instanceof Directory)) {
       return false;
     }
 
-    return (obj.contents ?? []).some((child) => this.predicate.evaluate(child));
+    return (context.current.contents ?? []).some((child) =>
+      this.predicate.evaluate(context.withCurrent(child)),
+    );
   }
 }

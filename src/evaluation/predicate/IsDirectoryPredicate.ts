@@ -1,9 +1,9 @@
-import { Directory } from "../../mapping/discovery/Directory.js";
-import { type FsObject } from "../../mapping/discovery/FsObject.js";
+import type { DiscoveryContext } from "../../mapping/discovery/DiscoveryContext.js";
+import { Directory } from "../../mapping/discovery/nodejs/Directory.js";
 import { type Predicate } from "./Predicate.js";
 
-export class IsDirectoryPredicate implements Predicate<FsObject> {
-  evaluate(obj: FsObject): boolean {
-    return obj instanceof Directory;
+export class IsDirectoryPredicate implements Predicate<DiscoveryContext> {
+  evaluate(context: DiscoveryContext): boolean {
+    return context.current instanceof Directory;
   }
 }

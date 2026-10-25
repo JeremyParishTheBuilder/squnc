@@ -1,19 +1,29 @@
+import { DiscoveryContext } from "./DiscoveryContext.js";
+import { DiscoveryIdentity } from "./DiscoveryIdentity.js";
 import type { DiscoveryNode } from "./DiscoveryNode.js";
+import { DiscoveryResults } from "./DiscoveryResults.js";
 import type { DiscoverySource } from "./DiscoverySource.js";
 
-export interface DiscoveryRootSpec {
-  readonly source: DiscoverySource;
-  readonly discovery: DiscoveryNode;
-}
-
 export class DiscoveryRoot {
-  constructor(public readonly spec: DiscoveryRootSpec) {}
+  constructor(
+    public readonly physicalSource: DiscoverySource,
+    public readonly node: DiscoveryNode,
+  ) {}
 
-  get node() {
-    return this.spec.discovery;
-  }
+  discover(): DiscoveryResults {
+    const discoveryResults = new DiscoveryResults();
 
-  get source() {
-    return this.spec.source;
+    const current = this.physicalSource.open();
+
+    const context = new DiscoveryContext(
+      current,
+      new Map(),
+      new DiscoveryIdentity([]),
+      {},
+    );
+
+    this.node.discover(discoveryResults, null, context);
+
+    return discoveryResults;
   }
 }

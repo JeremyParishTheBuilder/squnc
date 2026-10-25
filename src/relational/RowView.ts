@@ -1,6 +1,6 @@
-import { type ColumnValue } from "../types/ColumnValue.js";
+import type { ColumnValue } from "../types/ColumnValue.js";
 
-export type RowView = {
+export interface RowView {
   index: number;
   readonly values: readonly ColumnValue[];
-};
+}

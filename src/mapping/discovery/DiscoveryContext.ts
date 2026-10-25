@@ -1,16 +1,16 @@
-import { type ColumnValue } from "../../types/ColumnValue.js";
-import { type CaptureContext } from "./CaptureContext.js";
 import type { DiscoveryValue } from "../value/DiscoveryValue.js";
-import type { CaptureValue } from "../value/CaptureValue.js";
-import type { DiscoveryIdentity } from "./DiscoveryIdentity.js";
-import type { DiscoveryResult } from "./DiscoveryResult.js";
+import type {
+  DiscoveryIdentity,
+  DiscoveryIdentityPart,
+} from "./DiscoveryIdentity.js";
+import type { StructuredValue } from "../value/StructuredValue.js";
 
-export class DiscoveryContext implements CaptureContext {
+export class DiscoveryContext {
   constructor(
     readonly current: DiscoveryValue,
-    readonly captures: ReadonlyMap<string, CaptureValue> = new Map(),
+    readonly captures: ReadonlyMap<string, StructuredValue> = new Map(),
     readonly identity: DiscoveryIdentity,
-    readonly result?: DiscoveryResult,
+    readonly payload: StructuredValue = null,
   ) {}
 
   withCurrent(current: DiscoveryValue): DiscoveryContext {
@@ -18,37 +18,34 @@ export class DiscoveryContext implements CaptureContext {
       current,
       this.captures,
       this.identity,
-      this.result,
+      this.payload,
     );
   }
 
-  withCapture(name: string, value: CaptureValue): DiscoveryContext {
+  withCapture(name: string, value: StructuredValue): DiscoveryContext {
     return new DiscoveryContext(
       this.current,
       new Map([...this.captures, [name, value]]),
       this.identity,
-      this.result,
+      this.payload,
     );
   }
 
-  withIdentityParts(parts: readonly ColumnValue[]): DiscoveryContext {
+  withIdentityParts(parts: readonly DiscoveryIdentityPart[]): DiscoveryContext {
     return new DiscoveryContext(
       this.current,
       this.captures,
       this.identity.append(...parts),
-      this.result,
+      this.payload,
     );
   }
 
-  selectCaptures(names: readonly string[]): Map<string, CaptureValue> {
-    const result = new Map<string, CaptureValue>();
-
-    for (const name of names) {
-      if (this.captures.get(name) !== undefined) {
-        result.set(name, this.captures.get(name)!);
-      }
-    }
-
-    return result;
+  withPayload(payload: StructuredValue): DiscoveryContext {
+    return new DiscoveryContext(
+      this.current,
+      this.captures,
+      this.identity,
+      payload,
+    );
   }
 }

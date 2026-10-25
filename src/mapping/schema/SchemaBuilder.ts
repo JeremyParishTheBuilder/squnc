@@ -1,4 +1,4 @@
-import { type ImportResult } from "../import/ImportResult.js";
+import { type ImportResult } from "../import/oldTypes/ImportResult.js";
 import { DatabaseSchema } from "./DatabaseSchema.js";
 
 export class SchemaBuilder {

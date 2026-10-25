@@ -875,4 +875,71 @@ describe("Integration::insertSelect", () => {
       },
     ]);
   });
+
+  it("rejects finalizing an inner query as a standalone statement", () => {
+    const sql = createTestPostgresSql();
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
+    sql.createTable(...createTableTestSpec("Source", {
+      Id: { type: SQL_DECIMAL, nullable: false },
+    })).execute();
+
+    sql.createTable(...createTableTestSpec("Destination", {
+      Id: { type: SQL_DECIMAL, nullable: false },
+    })).execute();
+
+    const innerQuery = sql
+      .insertInto("Destination", ["Id"])
+      .select([col("Id")])
+      .from("Source");
+
+    expect(() => innerQuery.asStatement())
+      .toThrow("Not allowed to finalize inner statement");
+  });
+
+  it("allows a standalone query to be finalized as a statement", () => {
+    const sql = createTestPostgresSql();
+
+    const statement = sql
+      .select([col("Id")])
+      .from("Source")
+      .asStatement();
+
+    expect(statement.kind).toBe("select");
+  });
+
+  it("allows an inner query to be finalized as an insert-select source", () => {
+    const sql = createTestPostgresSql();
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
+    sql.createTable(...createTableTestSpec("Source", {
+      Id: { type: SQL_DECIMAL, nullable: false },
+    })).execute();
+
+    sql.createTable(...createTableTestSpec("Destination", {
+      Id: { type: SQL_DECIMAL, nullable: false },
+    })).execute();
+
+    sql.insertInto("Source", ["Id"]).values([[1], [2]]).execute();
+
+    expect(() =>
+      sql
+        .insertInto("Destination", ["Id"])
+        .select(
+          sql
+            .select([col("Id")])
+            .from("Source"),
+        )
+        .execute(),
+    ).not.toThrow();
+
+    const result = sql.select("*").from("Destination").execute();
+
+    expect(result[0].rows.map((row) => row.values))
+      .toEqual([[1], [2]]);
+  });
 });

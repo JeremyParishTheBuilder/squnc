@@ -1,7 +1,7 @@
 import { type ColumnValue } from "../../types/ColumnValue.js";
 import { type Database } from "../../relational/Database.js";
 import { type Databases } from "../../relational/Databases.js";
-import { ImportResult } from "../import/ImportResult.js";
+import { ImportResult } from "../import/oldTypes/ImportResult.js";
 import { ImportRowIdentity } from "../import/ImportRowIdentity.js";
 import { type DatabaseSchema } from "./DatabaseSchema.js";
 import type { ColumnInput } from "../../types/ColumnInput.js";

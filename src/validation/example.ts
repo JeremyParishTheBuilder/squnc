@@ -3,11 +3,12 @@ import type { PostgresInputBatch } from "../input/PostgresInputBatch.js";
 import { col, and, or } from "../ast/dsl.js";
 import { ValidationEngine } from "./ValidationEngine.js";
 import { ValidationRuleset } from "./ValidationRuleset.js";
+import type { InputBatch } from "../input/InputBatch.js";
 
-const sql = EngineRegistry.getInstance().engine().input() as PostgresInputBatch;
-
-const exampleChainRegistry_validationRuleset: ValidationRuleset =
-  ValidationRuleset.create({
+export const exampleChainRegistry_ValidationRuleset = (
+  sql: PostgresInputBatch,
+) => {
+  return ValidationRuleset.create({
     name: "Chain Registry Test Validation",
   })
     .withRule({
@@ -47,6 +48,7 @@ const exampleChainRegistry_validationRuleset: ValidationRuleset =
           .asConstraintStatement(),
       ],
     });
+};
 
 export function runExampleValidation(
   engineName?: string,
@@ -55,7 +57,9 @@ export function runExampleValidation(
   const report = ValidationEngine.validate({
     engine: EngineRegistry.getInstance().engine(engineName),
     databaseName: databaseName ?? "Test Registry",
-    ruleset: exampleChainRegistry_validationRuleset,
+    ruleset: exampleChainRegistry_ValidationRuleset as (
+      sql: InputBatch,
+    ) => ValidationRuleset,
   });
 
   console.log(`${report.failedRules.length} validation rules failed`);

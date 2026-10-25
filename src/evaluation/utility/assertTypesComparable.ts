@@ -7,12 +7,9 @@ export function assertComparable(left: ColumnValue, right: ColumnValue): void {
 }
 
 function typesAreComparable(a: ColumnValue, b: ColumnValue): boolean {
-  if (
-    (typeof a !== "number" && typeof a !== "string") ||
-    (typeof b !== "number" && typeof b !== "string") ||
-    typeof a !== typeof b
-  ) {
-    return false;
+  if (typeof a === "number" && typeof b === "number") {
+    return Number.isFinite(a) && Number.isFinite(b);
   }
-  return true;
+
+  return typeof a === "string" && typeof b === "string";
 }

@@ -1,13 +1,13 @@
 import type { CaptureContext } from "../discovery/CaptureContext.js";
 import type { DiscoveryResult } from "../discovery/DiscoveryResult.js";
-import type { CaptureValue } from "../value/CaptureValue.js";
+import type { DiscoveryValue } from "../value/DiscoveryValue.js";
 import { type ImportRowIdentity } from "./ImportRowIdentity.js";
 
 export class ImportContext implements CaptureContext {
   constructor(
     readonly discovery: DiscoveryResult,
     readonly identity: ImportRowIdentity,
-    readonly source: CaptureValue,
+    readonly source: DiscoveryValue,
     readonly tableName?: string,
   ) {}
 
@@ -24,7 +24,7 @@ export class ImportContext implements CaptureContext {
     );
   }
 
-  withSource(source: CaptureValue): ImportContext {
+  withSource(source: DiscoveryValue): ImportContext {
     return new ImportContext(
       this.discovery,
       this.identity,

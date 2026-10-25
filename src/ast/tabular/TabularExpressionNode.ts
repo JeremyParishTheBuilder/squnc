@@ -1,4 +1,4 @@
-export type TabularExpressionKind = "table" | "query" | "join";
+export type TabularExpressionKind = "table" | "query" | "join" | "discovery";
 
 export interface TabularExpressionProjection {
   readonly kind: "tabularProjection";

@@ -1,10 +1,10 @@
-import type { ColumnValue } from "../../../types/ColumnValue.js";
 import { type DiscoveryNavigator } from "./DiscoveryNavigator.js";
 import type { DiscoveryValue } from "../../value/DiscoveryValue.js";
 import type {
   StructuredObject,
   StructuredProperty,
 } from "../../value/StructuredValue.js";
+import type { DiscoveryIdentityPart } from "../DiscoveryIdentity.js";
 
 export class StructuredObjectNavigator implements DiscoveryNavigator<
   StructuredObject,
@@ -24,7 +24,7 @@ export class StructuredObjectNavigator implements DiscoveryNavigator<
   identityParts(
     current: StructuredObject,
     next: StructuredProperty,
-  ): readonly ColumnValue[] {
+  ): readonly DiscoveryIdentityPart[] {
     return [next.key];
   }
 }

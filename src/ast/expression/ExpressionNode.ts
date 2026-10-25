@@ -25,9 +25,14 @@ import type { ColumnValue } from "../../types/ColumnValue.js";
 import { ComparisonPredicateNode } from "../predicate/ComparisonPredicateNode.js";
 import { IsNullPredicateNode } from "../predicate/IsNullPredicateNode.js";
 import { IsNotNullPredicateNode } from "../predicate/IsNotNullPredicateNode.js";
-import type { JsonValueExpressionNode } from "./JsonValueExpressionNode.js";
-import type { CurrentValueExpressionNode } from "./CurrentValueExpressionNode.js";
-import type { SourceExpressionNode } from "./SourceExpressionNode.js";
+import type {
+  JsonValueExpressionNode,
+  ResolvedJsonValueExpressionNode,
+} from "./JsonValueExpressionNode.js";
+import type {
+  JsonQueryExpressionNode,
+  ResolvedJsonQueryExpressionNode,
+} from "./JsonQueryExpressionNode.js";
 
 export type ResolvedExpressionNode =
   | ResolvedColumnExpressionNode
@@ -37,7 +42,9 @@ export type ResolvedExpressionNode =
   | ResolvedBinaryExpressionNode
   | ResolvedConcatExpressionNode
   | TemporalExpressionNode
-  | SqlFunctionExpressionNode;
+  | SqlFunctionExpressionNode
+  | ResolvedJsonValueExpressionNode
+  | ResolvedJsonQueryExpressionNode;
 
 export type ExpressionNodeUnion =
   | ColumnExpressionNode
@@ -49,8 +56,28 @@ export type ExpressionNodeUnion =
   | TemporalExpressionNode
   | SqlFunctionExpressionNode
   | JsonValueExpressionNode
-  | CurrentValueExpressionNode
-  | SourceExpressionNode;
+  | JsonQueryExpressionNode;
+
+export function isExpressionNodeUnion(
+  expr: ExpressionNode,
+): expr is ExpressionNodeUnion {
+  switch (expr.kind) {
+    case "literal":
+    case "column":
+    case "case":
+    case "cast":
+    case "binary":
+    case "concat":
+    case "temporal":
+    case "sql_function":
+    case "json_value":
+    case "json_query":
+      return true;
+
+    default:
+      return false;
+  }
+}
 
 export type ExpressionKind =
   | "column"
@@ -62,6 +89,7 @@ export type ExpressionKind =
   | "temporal"
   | "sql_function"
   | "json_value"
+  | "json_query"
   | "current"
   | "source";
 

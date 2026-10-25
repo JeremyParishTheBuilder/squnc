@@ -1,12 +1,11 @@
 import {
   basename,
   capture,
-  captureScalar,
   concat,
-  current,
+  json_value,
   literal,
+  payload,
   propertyName,
-  value,
 } from "../dsl/expression/functions.js";
 import {
   contains,
@@ -17,36 +16,27 @@ import {
   some,
 } from "../dsl/predicate/functions.js";
 import { JsonDecoder } from "./decoding/JsonDecoder.js";
-import { Directory } from "./Directory.js";
+import { Directory } from "./nodejs/Directory.js";
 import { DiscoveryNode } from "./DiscoveryNode.js";
 import { DiscoveryRoot } from "./DiscoveryRoot.js";
-import { FsDiscoverySource } from "./DiscoverySource.js";
+import { FsDiscoverySource } from "./nodejs/FsDiscoverySource.js";
 import { DirectoryNavigator } from "./navigation/DirectoryNavigator.js";
 import { SelfNavigator } from "./navigation/SelfNavigator.js";
 import { StructuredArrayNavigator } from "./navigation/StructuredArrayNavigator.js";
 import { StructuredObjectNavigator } from "./navigation/StructuredObjectNavigator.js";
 
 export const exampleChainRegistry_DiscoveryDefinition = () => {
-  console.log("starting chain reg");
-
-  // const logoUrisNode = new DiscoveryNode({
-  //   navigator: new StructuredObjectNavigator(),
-  //   matcher: propertyName().eq("logo_URIs"),
-  //   nodeType: "LogoUris",
-  //   children: [],
-  // });
-
   const assetNode = new DiscoveryNode({
     navigator: new StructuredArrayNavigator(),
     matcher: isNull(literal(null)),
     nodeType: "asset",
     captures: {
-      base: value("base"),
+      base: json_value(payload(), "$.base"),
       owner: concat(
         literal("Asset:"),
-        captureScalar("chainDirectoryName"),
+        json_value(capture("chain"), "$"),
         literal(":"),
-        current().path("base").scalar(),
+        json_value(payload(), "$.base"),
       ),
     },
     children: [],
@@ -73,11 +63,7 @@ export const exampleChainRegistry_DiscoveryDefinition = () => {
     decoder: new JsonDecoder(),
     nodeType: "chainFile",
     captures: {
-      chain: current(),
-      owner: concat(
-        literal("Chain:"),
-        capture("chain").path("chain_name").scalar(),
-      ),
+      owner: concat(literal("Chain:"), json_value(capture("chain"), "$")),
     },
     children: [],
   });
@@ -93,7 +79,7 @@ export const exampleChainRegistry_DiscoveryDefinition = () => {
     children: [chainFileNode, assetlistFileNode],
     nodeType: "chainDirectory",
     captures: {
-      chainDirectoryName: current().path("_basename"),
+      chain: basename(),
     },
   });
 
@@ -147,16 +133,16 @@ export const exampleChainRegistry_DiscoveryDefinition = () => {
     nodeType: "registry",
   });
 
-  const registryRootDirectory = new Directory("./temp");
+  const registryRootDirectory = new Directory("./external/testRegistry");
 
   const testRegistryRootDirectory = new FsDiscoverySource(
     registryRootDirectory,
   );
 
-  const testRegistryDiscoveryRoot = new DiscoveryRoot({
-    source: testRegistryRootDirectory,
-    discovery: testRegistryDiscoveryNode,
-  });
+  const testRegistryDiscoveryRoot = new DiscoveryRoot(
+    testRegistryRootDirectory,
+    testRegistryDiscoveryNode,
+  );
 
   return testRegistryDiscoveryRoot;
 };

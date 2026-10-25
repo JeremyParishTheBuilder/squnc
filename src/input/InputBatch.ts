@@ -61,9 +61,11 @@ export abstract class InputBatch {
     protected readonly executeStatement: (
       stmt: Statement,
     ) => QueryResult | void,
+    private readonly isInner: boolean = false,
   ) {}
 
   protected abstract createInputBatch(): this;
+  protected abstract createInnerInputBatch(): this;
 
   private addStatement(stmt: Statement) {
     this.statements.push(stmt);
@@ -394,7 +396,7 @@ export abstract class InputBatch {
     fragment: string = "SELECT",
   ) {
     if (!isInputBatch(projectionOrQuery) && this.currentBuilder !== null) {
-      const newQueryInputCursor = this.createInputBatch();
+      const newQueryInputCursor = this.createInnerInputBatch();
       newQueryInputCursor.select(projectionOrQuery);
       return newQueryInputCursor;
     }
@@ -499,14 +501,30 @@ export abstract class InputBatch {
     return GETDATE;
   }
 
-  asStatement(): Statement | undefined {
+  private tryAsStatement(
+    assertNotInner: boolean = true,
+  ): Statement | undefined {
+    if (assertNotInner && this.isInner) {
+      throw new Error(`Not allowed to finalize inner statement`);
+    }
+
     this.finalizeStatement();
 
     return this.statements.pop();
   }
 
-  asConstraintStatement(): ConstraintStatement {
-    const statement = this.asStatement();
+  public asStatement(): Statement {
+    const statement = this.tryAsStatement();
+
+    if (statement === undefined) {
+      throw new Error("No statement is available.");
+    }
+
+    return statement;
+  }
+
+  public asConstraintStatement(): ConstraintStatement {
+    const statement = this.tryAsStatement();
 
     if (!isConstraintStatement(statement)) {
       throw new Error(
@@ -517,8 +535,8 @@ export abstract class InputBatch {
     return statement;
   }
 
-  asQueryStatement(): QueryStatement {
-    const statement = this.asStatement();
+  private asQueryStatement(): QueryStatement {
+    const statement = this.tryAsStatement(false);
 
     if (!isQueryStatement(statement)) {
       throw new Error("Statement is not a query statement.");

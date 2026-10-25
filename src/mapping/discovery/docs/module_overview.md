@@ -2,265 +2,172 @@
 
 ## Purpose
 
-The Discovery module locates and describes structured data within external sources.
-
-It is responsible for:
-
-* navigating hierarchical data
-* matching values and structures
-* decoding values when required
-* capturing discovery metadata
-* establishing stable discovery identities
-* producing immutable `DiscoveryResult` trees
-
-Discovery does not define relational tables, columns, business rules, or relational constraints.
-
-Its output is consumed by Import.
-
----
-
-# High-Level Architecture
-
-```text
-External Source
-      │
-      ▼
-DiscoverySource
-      │
-      ▼
-DiscoveryRoot
-      │
-      ▼
-DiscoveryNode Graph
-      │
-      ▼
-DiscoveryResult Tree
-      │
-      ▼
-Import
-```
-
-A discovery source provides the initial value.
-
-A discovery root combines that source with a root discovery node.
-
-The discovery graph describes how values are navigated, matched, decoded, and captured.
-
-Execution produces immutable discovery results.
-
----
-
-# Discovery Sources
-
-`DiscoverySource` abstracts the origin of discovered data.
-
-Discovery depends on the source abstraction rather than on a particular physical storage medium.
-
-Sources may represent:
-
-* filesystem objects
-* archives
-* JSON documents
-* HTTP resources
-* databases
-* in-memory structures
-
-A source provides the root value from which discovery begins.
-
-The source itself does not determine how that value is traversed.
-
----
-
-# Discovery Roots
-
-`DiscoveryRoot` defines an independent discovery operation.
-
-A root combines:
-
-* a `DiscoverySource`
-* a root `DiscoveryNode`
-
-Multiple roots may operate over different sources or provide different views of the same external data.
-
-Discovery roots produce results independently of Import.
-
----
-
-# Discovery Nodes
-
-A `DiscoveryNode` describes one step in the discovery graph.
-
-A node may define:
-
-* navigation
-* matching
-* decoding
-* captures
-* child discoveries
-
-Nodes describe the physical or structural process of locating data.
-
-They do not define relational tables or relational columns.
-
----
-
-# Navigation
-
-`DiscoveryNavigator` moves from one value to related values.
-
-Navigation may represent structures such as:
-
-* object properties
-* array elements
-* filesystem children
-* parent/child relationships
-* other source-specific structures
-
-Navigation is deliberately separate from decoding.
-
-A navigator determines **where to go**.
-
-A decoder determines **how a value is represented**.
-
----
-
-# Decoding
-
-`DiscoveryDecoder` converts a discovered value into a representation suitable for further discovery.
-
-For example:
-
-```text
-File
-  │
-  ▼
-Decoder
-  │
-  ▼
-JSON object
-```
-
-Decoding is optional.
-
-Discovery therefore remains independent of the representation used by the underlying source.
-
----
-
-# Matching
-
-Discovery nodes may restrict which navigated values participate in discovery.
-
-Matching determines whether a value is eligible for a particular discovery step.
-
-Matching belongs to Discovery because it concerns locating physical or structural data rather than shaping relational output.
-
----
-
-# Captures
-
-Captures preserve values or metadata discovered during traversal.
-
-Captures are part of the discovery result context and may be consumed by downstream processing.
-
-Discovery should capture information necessary to describe or identify discovered data.
-
-Derived relational fields should generally be computed during Import rather than encoded as Discovery-specific transformations.
-
-This distinction keeps Discovery focused on finding data while allowing Import to determine how discovered data becomes relational data.
-
----
-
-# Discovery Results
-
-`DiscoveryResult` is the immutable output of Discovery.
-
-A result records information such as:
-
-* result type
-* discovered value
-* captures
-* stable identity
-* child results
-
-Results form a tree corresponding to the discovery graph.
-
-Import consumes these results without performing Discovery again.
-
----
-
-# Discovery Identity
-
-Discovery establishes stable identities that can be preserved by downstream Import processing.
-
-These identities are independent of relational business keys.
-
-They allow multiple discovered values to be associated with the same logical imported entity without requiring Discovery to understand the eventual relational schema.
-
----
-
-# Relationship to Import
+The Discovery module locates and describes structured data from external sources. It converts physical source contents into a collection of `DiscoveryResult` records that downstream processing can query.
 
 Discovery answers:
 
-> Where is the data, and what was discovered?
+- What data was found?
+- Where was it found?
+- What kind of result does it represent?
+- What relationships exist between discovered results?
+- What values, captures, and metadata describe each result?
 
-Import answers:
+Discovery does not determine how results become relational tables or define business validation rules. Those responsibilities belong to downstream modules.
 
-> How should discovered data become relational data?
-
-The boundary is therefore:
+## High-Level Architecture
 
 ```text
-Discovery
-    │
-    │ DiscoveryResults
-    ▼
-Import
+Physical Source
+      |
+      v
+DiscoveryRoot
+      |
+      v
+DiscoveryNode traversal
+      |
+      v
+DiscoveryResults
+      |
+      v
+Relational Staging Source
+      |
+      v
+Downstream Processing
 ```
 
-Discovery does not need to know whether a discovered value will become:
+The main components are:
 
-* a table
-* a column
-* a staging value
-* an omitted value
-* part of a child relation
-* part of a derived expression
+- **Discovery sources** provide access to external data.
+- **Discovery roots** initialize and coordinate a discovery run.
+- **Discovery nodes** define traversal, matching, decoding, and result creation.
+- **Discovery contexts** carry the current value, captures, identity, and related context.
+- **Discovery results** store the records produced by traversal.
+- **The staging source** exposes those records through a relational query interface.
 
-Those decisions belong to Import.
+## Discovery Sources
 
----
+A physical source provides access to the external data being examined, such as a filesystem hierarchy.
 
-# Design Principles
+The source abstracts access to the underlying data so Discovery nodes can operate through the source and its discovered values rather than directly implementing source-specific access.
 
-* Discovery is independent of Import.
-* Discovery is independent of relational schema.
-* Discovery is independent of business validation.
-* Navigation and decoding are separate concerns.
-* Discovery is independent of physical storage medium.
-* Discovery results are immutable.
-* Stable discovery identities are independent of business keys.
-* Discovery locates and describes data rather than interpreting its business meaning.
-* Derived relational transformations belong to Import.
+Filesystem objects expose properties such as `basename` and `fullPath`. These describe physical locations and are distinct from Discovery result IDs.
 
----
+## Discovery Roots
+
+A `DiscoveryRoot` combines a physical source with a root Discovery node.
+
+A discovery run:
+
+1. Creates a new `DiscoveryResults` collection.
+2. Opens the physical source.
+3. Initializes the discovery context.
+4. Invokes the root node's discovery process.
+5. Returns the populated results collection.
+
+Each run produces its own collection. Result IDs are local to that collection; combining results from separate runs requires care to avoid ID collisions.
+
+## Discovery Nodes
+
+A `DiscoveryNode` defines a step in the discovery process. Depending on its configuration, a node can:
+
+- Navigate to candidate values.
+- Match candidates against discovery criteria.
+- Decode or interpret discovered values.
+- Capture named values from the current context.
+- Invoke further discovery nodes for matched results.
+
+Nodes describe how data is found and represented, rather than how it is ultimately stored in relational tables.
+
+## Navigation
+
+Navigation determines which candidate values a node examines.
+
+Navigators separate traversal logic from node matching and decoding. For example, a directory navigator can enumerate a directory's contents, while other navigators can traverse structured properties or elements.
+
+Navigation establishes the candidates available to a node. It does not itself guarantee that a candidate becomes a result; matching and the node's discovery logic determine which candidates are accepted.
+
+## Matching and Decoding
+
+**Matching** determines whether a candidate satisfies a node's criteria.
+
+**Decoding** interprets or converts a candidate into the value represented by a result. Structured data may require decoding before its properties or elements can be examined by subsequent nodes.
+
+These responsibilities are distinct: navigation finds candidates, matching selects relevant candidates, and decoding determines their interpreted representation.
+
+## Captures and Metadata
+
+Captures are named values collected during discovery and stored on each result. They can preserve contextual information that may be useful to downstream processing.
+
+Metadata describes additional information about a result, such as its physical source, position within structured data, or processing details.
+
+Metadata is adapted into a structured value. The adapter always returns an object; when no metadata fields are available, the result is an empty object (`{}`).
+
+Captures and metadata serve different purposes:
+
+- **Captures** preserve named values collected by Discovery.
+- **Metadata** describes the result and its origin or processing.
+- **Value** contains the discovered value itself.
+
+Discovery should preserve useful source information without taking responsibility for deriving the final relational representation.
+
+## Discovery Identity
+
+Discovery distinguishes result relationships from physical identity.
+
+- **`resultId`** identifies a result within its `DiscoveryResults` collection.
+- **`parentResultId`** identifies the parent result, or is `null` for a root result.
+- **`identity`** is the physical `DiscoveryIdentity` describing the discovered source location.
+
+These identifiers serve different purposes. Physical identity must not be used as a substitute for result IDs when expressing relationships between records.
 
 ## Discovery Results
 
-Discovery produces immutable `DiscoveryResult`s.
+Each `DiscoveryResult` contains:
 
-Each result records:
+- `resultId`: unique ID within its collection.
+- `parentResultId`: parent result ID, or `null`.
+- `nodeType`: identifies the Discovery node type that produced the result.
+- `identity`: physical `DiscoveryIdentity`.
+- `value`: discovered value.
+- `metadata`: structured descriptive metadata.
+- `captures`: named captured values.
 
-- `nodeType`
-- physical `identity`
-- discovered `value`
-- optional `resultId`
-- optional `parentResultId`
-- captures
-- discovered children
+`DiscoveryResults` stores results keyed by `DiscoveryResultId` and exposes them through `getAll()`. Result relationships are represented by `parentResultId`; results do not depend on nested `children` arrays.
 
-`DiscoveryResults` will provide the collection-level representation of a discovery execution, including result identity and relationship lookup.
+This separates the identity of a result record from the physical identity of the value it represents, and allows the result graph to be represented relationally.
 
-Result IDs provide stable references within a discovery result set. Parent relationships allow the discovery tree to be represented without requiring cyclic object references.
+## Relational Staging Interface
 
-The current recursive `children` representation remains an implementation detail used during discovery and may eventually be replaced by collection-level relationships.
+The staging source exposes Discovery results as rows for downstream querying. Its columns are:
+
+| Column | SQL type | Nullable |
+|---|---|---|
+| `resultId` | `SQL_INTEGER` | No |
+| `parentResultId` | `SQL_INTEGER` | Yes |
+| `nodeType` | `SQL_VARCHAR` | No |
+| `identity` | `SQL_JSON` | No |
+| `value` | `SQL_JSON` | Yes |
+| `metadata` | `SQL_JSON` | No |
+| `captures` | `SQL_JSON` | No |
+
+The staging adapter converts Discovery data into values supported by the relational query system. Structured values, metadata, and captures are exposed through this interface rather than requiring consumers to inspect internal Discovery objects directly.
+
+The staging contract defines the data exposed to consumers. It does not prescribe the transformations consumers perform on that data.
+
+## Relationship to Other Modules
+
+Discovery is responsible for locating data and producing a consistent representation of the results.
+
+The relational staging source provides the boundary through which downstream modules can consume those results. Import can use this interface to transform discovered data into relational data, but the Discovery model is not defined by Import's rulesets, SQL statements, or target schema.
+
+Discovery does not perform automatic relational schema inference, construct application-specific database schemas, or execute Import rulesets.
+
+## Design Principles
+
+- Separate physical traversal from interpretation of discovered data.
+- Represent discovered records explicitly and consistently.
+- Use result IDs for result relationships and physical identities for source identity.
+- Store parent relationships through IDs rather than nested child collections.
+- Preserve useful captures and source metadata.
+- Expose results through a relational staging interface.
+- Keep Discovery independent of downstream transformation rules and relational schemas.

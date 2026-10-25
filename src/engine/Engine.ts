@@ -4,7 +4,6 @@ import { RuleResolver } from "./RuleResolver.js";
 import { type RulesFacadeShape, RulesFacade } from "./RulesFacade.js";
 
 import { type InputBatch } from "../input/InputBatch.js";
-
 import { PostgresInputBatch } from "../input/PostgresInputBatch.js";
 import { SqlServerInputBatch } from "../input/SqlServerInputBatch.js";
 import { MySqlInputBatch } from "../input/MySqlInputBatch.js";
@@ -16,6 +15,8 @@ import { type Statement } from "../statements/index.js";
 import { Databases } from "../relational/Databases.js";
 import { SemanticAnalyzer } from "../semantic/SemanticAnalyzer.js";
 import type { QueryResult } from "../evaluation/QueryResult.js";
+import type { StatementExecutionOptions } from "./StatementExecutionOptions.js";
+import type { Database } from "../relational/Database.js";
 
 export class Engine {
   public databases: Databases = new Databases();
@@ -47,6 +48,31 @@ export class Engine {
       throw new Error(`Unsupported dialect: ${dialect}`);
     }
     return new Engine(dialect);
+  }
+
+  // TODO
+  // hasDatabase(name: string): boolean {
+  //   // Check whether this.databases contains the named database.
+  //   return this.databases.getByName(name) ? true : false;
+  // }
+
+  // createDatabase(name: string): void {
+  //   if (this.hasDatabase(name)) {
+  //     throw new Error(`Database "${name}" already exists.`);
+  //   }
+
+  //   this.databases = this.databases.create({ name });
+  // }
+
+  ensureDatabase(name: string): Database {
+    let database = this.databases.getByName(name);
+
+    if (!database) {
+      this.databases = this.databases.create({ name });
+      database = this.databases.requireByName(name);
+    }
+
+    return database;
   }
 
   updatePolicy(update: Partial<EnginePolicy>) {
@@ -81,8 +107,17 @@ export class Engine {
     }
   }
 
-  private bindAndExecute(tx: Transaction, stmt: Statement): QueryResult | void {
-    const ctx = new ExecutionContext(tx, this.rules, this.currentDb);
+  private bindAndExecute(
+    tx: Transaction,
+    stmt: Statement,
+    options?: StatementExecutionOptions,
+  ): QueryResult | void {
+    const ctx = new ExecutionContext(
+      tx,
+      this.rules,
+      this.currentDb,
+      options?.sources,
+    );
 
     const analyzer = new SemanticAnalyzer(ctx);
 
@@ -101,7 +136,10 @@ export class Engine {
     };
   }
 
-  executeStatement(stmt: Statement): QueryResult | void {
+  executeStatement(
+    stmt: Statement,
+    options?: StatementExecutionOptions,
+  ): QueryResult | void {
     if (stmt.kind === "begin") {
       this.beginTx();
       return;
@@ -119,13 +157,16 @@ export class Engine {
     const tx = this.getTx();
 
     if (!tx) {
-      return this.tryExecuteAutoCommit(stmt);
+      return this.tryExecuteAutoCommit(stmt, options);
     }
 
-    return this.bindAndExecute(tx, stmt);
+    return this.bindAndExecute(tx, stmt, options);
   }
 
-  tryExecuteAutoCommit(stmt: Statement): QueryResult | void {
+  tryExecuteAutoCommit(
+    stmt: Statement,
+    options?: StatementExecutionOptions,
+  ): QueryResult | void {
     if (!this.rules.transaction.autoCommit) {
       throw new Error("Auto-commit disabled");
     }
@@ -135,7 +176,7 @@ export class Engine {
     try {
       const tx = this.requireTx();
 
-      const result = this.bindAndExecute(tx, stmt);
+      const result = this.bindAndExecute(tx, stmt, options);
 
       this.commitTx();
 

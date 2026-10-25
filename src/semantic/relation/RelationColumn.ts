@@ -11,7 +11,7 @@ export interface RelationColumn {
 }
 
 export function relationColumnsFromTable(table: Table): RelationColumn[] {
-  return [...table.columns.values()].map((column) => ({
+  return [...table.getColumnsInOrder()].map((column) => ({
     column: {
       name: column.name,
       type: column.type,

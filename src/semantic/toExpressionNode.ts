@@ -14,7 +14,7 @@ import { DefaultValueNode } from "../ast/DefaultValueNode.js";
 import { asExpressionNode } from "../ast/expression/asExpressionNode.js";
 import { SqlFunctionExpressionNode } from "../ast/expression/SqlFunctionExpressionNode.js";
 import { TemporalExpressionNode } from "../ast/expression/TemporalExpressionNode.js";
-import { isExpressionNodeUnion } from "../ast/expression/isExpressionNodeUnion.js";
+import { isExpressionNodeUnion } from "../ast/expression/ExpressionNode.js";
 import type { ExpressionNode } from "../ast/expression/ExpressionNode.js";
 import type { InsertValuesInput } from "../types/InsertSource.js";
 

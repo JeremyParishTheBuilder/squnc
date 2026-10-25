@@ -9,11 +9,42 @@ export type StructuredArray = StructuredValue[];
 export type StructuredValue =
   StructuredObject | StructuredArray | PrimitiveValue;
 
-export function isStructuredValue(value: unknown): value is StructuredValue {
+export type StructuredContainer = StructuredObject | StructuredArray;
+
+export function isStructuredContainer(
+  value: unknown,
+): value is StructuredContainer {
+  return (
+    value !== null && typeof value === "object" && isStructuredValue(value)
+  );
+}
+
+export function isPrimitiveValue(value: unknown): value is PrimitiveValue {
+  if (typeof value === "number") {
+    return Number.isFinite(value);
+  }
+
   if (
     value === null ||
     typeof value === "string" ||
-    typeof value === "number" ||
+    //typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export function isStructuredValue(value: unknown): value is StructuredValue {
+  if (typeof value === "number") {
+    return Number.isFinite(value);
+  }
+
+  if (
+    value === null ||
+    typeof value === "string" ||
+    //typeof value === "number" ||
     typeof value === "boolean"
   ) {
     return true;

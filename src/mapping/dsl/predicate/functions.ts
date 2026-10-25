@@ -7,7 +7,7 @@ import { IsNullPredicate } from "../../../evaluation/predicate/IsNull.js";
 import { NotPredicate } from "../../../evaluation/predicate/NotPredicate.js";
 import { OrPredicate } from "../../../evaluation/predicate/OrPredicate.js";
 import { XorPredicate } from "../../../evaluation/predicate/XorPredicate.js";
-import { type FsObject } from "../../discovery/FsObject.js";
+import type { DiscoveryContext } from "../../discovery/DiscoveryContext.js";
 import { type ExpressionBuilder } from "../expression/ExpressionBuilder.js";
 import { PredicateBuilder } from "./PredicateBuilder.js";
 
@@ -35,15 +35,15 @@ export function xor<TContext>(
 }
 
 export function isDirectory() {
-  return new PredicateBuilder<FsObject>(new IsDirectoryPredicate());
+  return new PredicateBuilder<DiscoveryContext>(new IsDirectoryPredicate());
 }
 
 export function isFile() {
-  return new PredicateBuilder<FsObject>(new IsFilePredicate());
+  return new PredicateBuilder<DiscoveryContext>(new IsFilePredicate());
 }
 
-export function contains(predicate: PredicateBuilder<FsObject>) {
-  return new PredicateBuilder<FsObject>(
+export function contains(predicate: PredicateBuilder<DiscoveryContext>) {
+  return new PredicateBuilder<DiscoveryContext>(
     new ContainsPredicate(predicate.predicate),
   );
 }

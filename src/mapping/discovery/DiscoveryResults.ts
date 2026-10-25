@@ -1,4 +1,8 @@
-import type { DiscoveryResult, DiscoveryResultId } from "./DiscoveryResult.js";
+import type { StructuredValue } from "../value/StructuredValue.js";
+import type { DiscoveryIdentity } from "./DiscoveryIdentity.js";
+import type { DiscoveryMetadata } from "./DiscoveryMetadata.js";
+import type { DiscoveryPayload } from "./DiscoveryPayload.js";
+import { DiscoveryResult, DiscoveryResultId } from "./DiscoveryResult.js";
 
 export class DiscoveryResults {
   private readonly results = new Map<DiscoveryResultId, DiscoveryResult>();
@@ -8,12 +12,32 @@ export class DiscoveryResults {
     return this.nextResultId++ as DiscoveryResultId;
   }
 
-  // public register(result: DiscoveryResult, parentId: DiscoveryResultId): void {
-  //   const nextResultId = this.getNextResultId();
-  //   const resultWithIds =
-  //     result
-  //       .withId(nextResultId)
-  //       .withParentId(parentId);
-  //   this.results.set(nextResultId, resultWithIds);
-  // }
+  public createDiscoveryResult(
+    parentResultId: DiscoveryResultId | null,
+    nodeType: string,
+    identity: DiscoveryIdentity,
+    value: DiscoveryPayload,
+    metadata: DiscoveryMetadata,
+    captures: Map<string, StructuredValue>,
+  ): DiscoveryResult {
+    const resultId = this.getNextResultId();
+
+    const result = new DiscoveryResult(
+      resultId,
+      parentResultId,
+      nodeType,
+      identity,
+      value,
+      metadata,
+      captures,
+    );
+
+    this.results.set(resultId, result);
+
+    return result;
+  }
+
+  public getAll(): readonly DiscoveryResult[] {
+    return [...this.results.values()];
+  }
 }

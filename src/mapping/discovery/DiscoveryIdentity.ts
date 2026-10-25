@@ -1,18 +1,9 @@
-import type { ColumnValue } from "../../types/ColumnValue.js";
+import type { PrimitiveValue } from "../value/StructuredValue.js";
 
-export type DiscoveryIdentityPart = ColumnValue;
-
-// class DiscoveryIdentityPart {
-//     constructor(
-//         readonly kind: DiscoveryIdentityKind,
-//         readonly value: unknown,
-//     ) {}
-// }
-// because I think eventually you'll want operations like
-// identity.untilNodeType("chainDirectory")
+export type DiscoveryIdentityPart = PrimitiveValue;
 
 export class DiscoveryIdentity {
-  constructor(readonly parts: readonly ColumnValue[]) {}
+  constructor(readonly parts: readonly DiscoveryIdentityPart[]) {}
 
   static empty(): DiscoveryIdentity {
     return new DiscoveryIdentity([]);
