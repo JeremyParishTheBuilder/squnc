@@ -6,10 +6,7 @@ export function assertComparable(left: ColumnValue, right: ColumnValue): void {
   }
 }
 
-function typesAreComparable(
-  a: ColumnValue,
-  b: ColumnValue,
-): boolean {
+function typesAreComparable(a: ColumnValue, b: ColumnValue): boolean {
   if (typeof a === "number" && typeof b === "number") {
     return Number.isFinite(a) && Number.isFinite(b);
   }

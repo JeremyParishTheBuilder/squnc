@@ -53,7 +53,7 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-    const ruleset = (sql: InputBatch) => {
+    const ruleset = () => {
       return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
@@ -115,7 +115,7 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-     const ruleset = (sql: InputBatch) => {
+     const ruleset = () => {
       return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
@@ -184,7 +184,7 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-     const ruleset = (sql: InputBatch) => {
+     const ruleset = () => {
       return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
@@ -267,7 +267,7 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-     const ruleset = (sql: InputBatch) => {
+     const ruleset = () => {
       return ValidationRuleset
       .create({ name: "Order Validation" })
       .withRule(rule);
@@ -349,7 +349,7 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-     const ruleset = (sql: InputBatch) => {
+     const ruleset = () => {
       return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(passingRule)
@@ -424,7 +424,7 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-     const ruleset = (sql: InputBatch) => {
+     const ruleset = () => {
       return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
@@ -493,7 +493,7 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-     const ruleset = (sql: InputBatch) => {
+     const ruleset = () => {
       return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
@@ -554,7 +554,7 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-     const ruleset = (sql: InputBatch) => {
+     const ruleset = () => {
       return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);
@@ -607,7 +607,7 @@ describe("ValidationEngine::validate", () => {
       ],
     });
 
-     const ruleset = (sql: InputBatch) => {
+     const ruleset = () => {
       return ValidationRuleset
       .create({ name: "User Validation" })
       .withRule(rule);

@@ -1,4 +1,7 @@
-import { isStructuredContainer, isStructuredValue } from "../mapping/value/StructuredValue.js";
+import {
+  isStructuredContainer,
+  isStructuredValue,
+} from "../mapping/value/StructuredValue.js";
 import type { ColumnValue } from "./ColumnValue.js";
 import {
   isValidDateValue,

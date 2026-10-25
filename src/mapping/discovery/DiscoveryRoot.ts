@@ -19,14 +19,10 @@ export class DiscoveryRoot {
       current,
       new Map(),
       new DiscoveryIdentity([]),
-      {}
+      {},
     );
 
-    this.node.discover(
-      discoveryResults,
-      null,
-      context,
-    );
+    this.node.discover(discoveryResults, null, context);
 
     return discoveryResults;
   }

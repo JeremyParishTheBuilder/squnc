@@ -1,4 +1,4 @@
-import type { JsonValuePath } from "../../mapping/import/JsonValuePath.js";
+import type { JsonValuePath } from "../../mapping/value/JsonValuePath.js";
 import {
   ExpressionNode,
   type ResolvedExpressionNode,

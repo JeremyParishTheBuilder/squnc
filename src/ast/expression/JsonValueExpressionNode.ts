@@ -1,5 +1,8 @@
-import type { JsonValuePath } from "../../mapping/import/JsonValuePath.js";
-import { ExpressionNode, type ResolvedExpressionNode, } from "./ExpressionNode.js";
+import type { JsonValuePath } from "../../mapping/value/JsonValuePath.js";
+import {
+  ExpressionNode,
+  type ResolvedExpressionNode,
+} from "./ExpressionNode.js";
 
 export class ResolvedJsonValueExpressionNode {
   readonly kind = "json_value" as const;

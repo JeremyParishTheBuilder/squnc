@@ -1,5 +1,8 @@
 import { Immutable } from "../../infrastructure/Immutable.js";
-import { ImportInstruction, type ImportInstructionSpec } from "./ImportInstruction.js";
+import {
+  ImportInstruction,
+  type ImportInstructionSpec,
+} from "./ImportInstruction.js";
 
 export interface ImportRulesetSpec {
   readonly name: string;
@@ -22,9 +25,7 @@ export class ImportRuleset extends Immutable {
     this.seal();
   }
 
-  static create(
-    spec: Omit<ImportRulesetSpec, "instructions">,
-  ): ImportRuleset {
+  static create(spec: Omit<ImportRulesetSpec, "instructions">): ImportRuleset {
     return new ImportRuleset(spec);
   }
 
@@ -45,9 +46,7 @@ export class ImportRuleset extends Immutable {
   }
 
   getInstruction(name: string): ImportInstruction | undefined {
-    return this.instructions.find(
-      (instruction) => instruction.name === name,
-    );
+    return this.instructions.find((instruction) => instruction.name === name);
   }
 
   requireInstruction(name: string): ImportInstruction {

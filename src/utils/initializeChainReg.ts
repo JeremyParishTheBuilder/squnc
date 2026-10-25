@@ -1,7 +1,7 @@
 import { EngineRegistry } from "../engine/EngineRegistry.js";
 import { type PostgresInputBatch } from "../input/PostgresInputBatch.js";
-import { ImportMapping } from "../mapping/import/ImportMapping.js";
-import { ImportPipeline } from "../mapping/pipeline/ImportPipeline.js";
+import { ImportMapping } from "../mapping/import/oldTypes/ImportMapping.js";
+import { ImportPipeline } from "../mapping/pipeline/old/ImportPipeline.js";
 // import {
 //   captureScalar,
 //   case_,
@@ -14,7 +14,7 @@ import { ImportPipeline } from "../mapping/pipeline/ImportPipeline.js";
 //   isNull,
 //   isNotNull,
 // } from "../mapping/dsl/predicate/functions.js";
-import { ImportRoot } from "../mapping/import/ImportRoot.js";
+import { ImportRoot } from "../mapping/import/oldTypes/ImportRoot.js";
 //import { discovery, path } from "../mapping/import/dsl.js";
 import { DiscoveryRoot } from "../mapping/discovery/DiscoveryRoot.js";
 import { SQL_DECIMAL } from "../types/SqlType.js";

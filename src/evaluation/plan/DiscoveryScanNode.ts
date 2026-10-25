@@ -7,9 +7,7 @@ import type { PlanNode } from "./PlanNode.js";
 import type { QueryColumn } from "./QueryPlan.js";
 
 export class DiscoveryScanNode implements PlanNode {
-  constructor(
-    readonly discovery: DiscoveryResults,
-  ) {}
+  constructor(readonly discovery: DiscoveryResults) {}
 
   *execute(): IterableIterator<RowView> {
     for (const result of this.discovery.getAll()) {
@@ -18,9 +16,7 @@ export class DiscoveryScanNode implements PlanNode {
   }
 }
 
-function discoveryResultAsRowView(
-  result: DiscoveryResult,
-): RowView {
+function discoveryResultAsRowView(result: DiscoveryResult): RowView {
   const adapted = adaptDiscoveryResult(result);
 
   return {

@@ -2,314 +2,189 @@
 
 ## Purpose
 
-The Mapping module transforms external structured data into an immutable relational representation suitable for querying, mutation, validation, and export.
+The Mapping module coordinates the transformation of external structured data into relational data.
 
-It intentionally separates three independent concerns:
+Its current responsibilities are:
 
-1. **Discovery**
+1. **Discovery** — locate and describe data from external sources.
+2. **Import** — query discovery results and populate a relational database using SQL-based rulesets.
+3. **Orchestration** — coordinate Discovery and Import, retaining their latest results.
 
-   * Locate data within an external source.
-   * Navigate hierarchical structures.
-   * Decode values when required.
-   * Capture metadata.
-   * Produce immutable `DiscoveryResult` trees.
+Schema inference and database construction are planned downstream stages, not responsibilities of the current Mapping implementation.
 
-2. **Import**
-
-   * Traverse `DiscoveryResult` trees.
-   * Select logical objects.
-   * Transform values through expressions.
-   * Produce immutable relational rows.
-
-3. **Schema Inference**
-
-   * Observe imported rows.
-   * Infer relational tables, columns, and relationships.
-   * Produce a `DatabaseSchema`.
-
-The Mapping module is responsible only for representing external data relationally. It does not perform relational constraint enforcement or business validation.
+Mapping does not enforce business rules or perform validation. Those responsibilities belong to downstream components.
 
 ---
 
-# High-level architecture
+## High-Level Architecture
 
 ```text
-External source
-      │
-      ▼
- DiscoveryPipeline
-      │
-      ▼
- DiscoveryResults
-      │
-      ▼
- ImportPipeline
-      │
-      ▼
- ImportResults
-      │
-      ▼
- Schema Inference
-      │
-      ▼
- DatabaseBuilder
-      │
-      ▼
- Immutable Database
+External Source
+      |
+      v
+DiscoveryRoot
+      |
+      v
+DiscoveryResults
+      |
+      v
+Relational Staging Source
+      |
+      v
+ImportRuleset
+      |
+      v
+ImportEngine
+      |
+      v
+Relational Database
 ```
 
-Each stage consumes immutable output from the previous stage and produces immutable results for the next stage.
+`MappingOrchestrator` coordinates Discovery and Import. It ensures the target database exists before invoking Import.
+
+Discovery and Import have distinct responsibilities and communicate through the discovery staging interface.
 
 ---
 
-# Discovery
+## Discovery
 
-Discovery is responsible only for locating and describing data.
+Discovery locates and describes data without imposing relational schema.
 
-A discovery is defined by a `DiscoveryRoot`, which combines:
+A `DiscoveryRoot` combines a `DiscoverySource` with a root `DiscoveryNode`. The source determines where discovery begins; the discovery graph determines how values are navigated, matched, decoded, and described.
 
-* a `DiscoverySource`
-* a root `DiscoveryNode`
+Discovery nodes can define:
 
-The source determines where discovery begins, while the discovery graph determines how data is traversed.
+- Navigation through source structures.
+- Matching rules.
+- Optional decoding.
+- Captured values.
+- Metadata associated with discovered objects.
 
-Discovery is independent of relational concepts such as tables, columns, and keys.
-
-Each `DiscoveryNode` describes:
-
-* navigation
-* matching
-* optional decoding
-* captures
-* child discoveries
-
-Executing one or more `DiscoveryRoot`s produces immutable `DiscoveryResult` trees.
+Executing `DiscoveryRoot.discover()` produces `DiscoveryResults`, a collection of `DiscoveryResult` records.
 
 Each `DiscoveryResult` contains:
 
-* result type
-* discovered value
-* captures
-* stable identity
-* child results
+- `resultId` — an identifier for the result within its collection.
+- `parentResultId` — the identifier of its parent result, or `null` for a root result.
+- `nodeType` — the logical type assigned by the discovery graph.
+- `identity` — the physical identity of the discovered object.
+- `value` — the discovered value.
+- `metadata` — descriptive information about the result.
+- `captures` — values explicitly captured during discovery.
 
-Discovery understands physical structure but not logical schema.
+Results are related through `resultId` and `parentResultId`, not nested child arrays. Result identifiers and physical identities serve different purposes.
 
----
+Discovery describes physical structure without determining the final relational schema.
 
-# Discovery Sources
+## Discovery Sources
 
-`DiscoverySource` abstracts the origin of discovered data.
+`DiscoverySource` abstracts the origin of discovered data. Discovery depends on this abstraction rather than a particular storage medium.
 
-The Mapping module depends only on this abstraction rather than any particular storage medium.
+Sources can represent filesystem objects, structured documents, or other supported external data. The available source implementations determine which origins can actually be used.
 
-Examples include:
+A source provides the root value from which discovery proceeds.
 
-* filesystem objects
-* archives
-* JSON documents
-* HTTP resources
-* databases
-* in-memory structures
+## Discovery Staging Interface
 
-Each source opens a root value from which discovery begins.
+`DiscoveryResults` can be exposed as a relational staging source named `discovery`.
 
-This separation allows the same discovery graph to operate over different kinds of external data.
+The staging representation makes discovery records available to SQL queries. Consumers can filter by `nodeType`, extract values from `value` or `metadata`, inspect captures, and relate records through their result identifiers.
 
----
+The staging contract includes:
 
-# Import
+- `resultId`
+- `parentResultId`
+- `nodeType`
+- `identity`
+- `value`
+- `metadata`
+- `captures`
 
-Import transforms discovery results into logical relational rows.
+Structured fields are represented as JSON values. SQL expressions such as `JSON_VALUE` and `JSON_QUERY` can extract scalar and structured data, respectively, where supported by the expression implementation.
 
-Import is driven by `ImportRoot`s.
-
-Each `ImportRoot` explicitly connects:
-
-* one `DiscoveryRoot`
-* one root `ImportMapping`
-
-Import never performs discovery itself. It consumes the immutable discovery results produced by the discovery pipeline.
+Discovery defines what was found and exposes its results. Import determines how those results become relational rows.
 
 ---
 
-# Import Mapping
+## Import
 
-`ImportMapping` describes how logical objects become relational rows.
+Import transforms discovery data into relational tables using SQL statements.
 
-A mapping may specify:
+Import is defined by an `ImportRuleset`, which contains an ordered sequence of `ImportInstruction` objects. Each instruction groups statements under a name and optional description.
 
-* table name
-* source
-* fields
-* child mappings
-* flattening behaviour
-* namespace prefix
+The ruleset factory receives the configured `InputBatch`, allowing statements to be constructed using the appropriate SQL API.
 
-Mappings without a table name act purely as navigation and grouping nodes.
+An import can create tables, select and transform discovery data, and insert the resulting rows. For example, a query can select results of a particular `nodeType` and extract a directory name from result metadata before inserting it into a target table.
 
-They participate in traversal without producing rows.
+Import does not perform Discovery itself. It consumes the `DiscoveryResults` supplied by the orchestrator.
 
----
+### Import Rulesets
 
-# Import Sources
+`ImportRuleset` defines the work to execute. Instructions and their statements execute in declared order.
 
-`ImportSource`s navigate within imported data.
+Rulesets contain import operations, not database lifecycle management. The target database must exist before import begins; creating it is not an instruction within the import transaction.
 
-Examples include:
+### Import Engine
 
-* a discovery result
-* the current object
-* child paths
+`ImportEngine` executes a ruleset against a specified database using the supplied `Engine` and `InputBatch` type.
 
-Navigation produces zero or more `ImportContext`s:
+Its responsibilities include:
 
-```text
-navigate(context) → ImportContext[]
-```
+- Making supplied discovery results available to SQL queries.
+- Selecting the target database.
+- Executing instructions and statements in order.
+- Committing successful imports.
+- Rolling back the transaction when a statement fails.
+- Producing an `ImportReport` describing execution outcomes.
 
-This naturally supports:
+Transaction-control and database-selection operations are not permitted inside import instructions because the engine manages the import transaction and target database selection.
 
-* arrays
-* optional objects
-* sibling discoveries
-* repeated logical structures
-
-without requiring special traversal logic.
+An `ImportReport` records the execution outcome. Failures that occur during setup or before reportable statement execution may propagate as exceptions rather than produce a report.
 
 ---
 
-# Import Context
+## Mapping Orchestration
 
-`ImportContext` represents the current state during import.
+`MappingOrchestrator` coordinates the Discovery-to-Import workflow.
 
-It carries:
+Its responsibilities are to:
 
-* current discovery result
-* current value
-* row identity
-* current table
-* current namespace
+1. Execute a `DiscoveryRoot` and retain the resulting `DiscoveryResults`.
+2. Require successful Discovery before Import.
+3. Ensure the requested target database exists.
+4. Invoke `ImportEngine` with the retained discovery results.
+5. Retain and return the resulting `ImportReport`.
 
-Contexts are immutable.
+Database existence is handled through `Engine.ensureDatabase()`. An existing database is preserved; a missing database is created before import execution.
 
-Methods such as `withValue(...)` or `withNamespace(...)` produce modified contexts while preserving the remaining state.
+The orchestrator receives the engine and database name as part of the import specification. Callers do not need a separate database-setup step.
 
----
+The orchestrator retains the latest discovery results and import report. A new Discovery run invalidates the previous import report because it belongs to an earlier discovery run.
 
-# Row Identities
-
-Stable identities originate during discovery.
-
-Import preserves an identity while contributing data to the same logical row.
-
-Crossing into a different table adopts the identity of the discovered child object.
-
-This allows:
-
-* multiple mappings to assemble a single row
-* child tables to produce independent rows
-* imported rows to remain independent of business keys
+The orchestrator coordinates the workflow but does not implement SQL execution or transaction management itself.
 
 ---
 
-# Namespaces
+## Downstream Responsibilities
 
-Namespaces determine relational column qualification.
+Schema inference and database construction follow Import in the broader ETL pipeline.
 
-Entering a new table resets the namespace.
+Their planned responsibilities are to infer relational tables, columns, types, and relationships from imported data, then construct the resulting database schema and database.
 
-Within a table, each mapping contributes either:
+These stages are not currently part of the Mapping orchestration workflow.
 
-* an explicit namespace prefix, or
-* an inferred namespace from its import source
-
-This produces predictable column names such as:
-
-```text
-ChainFile.ChainName
-ChainFile.Codebase.Version
-```
-
-while allowing intentionally shared columns where appropriate.
+Validation and business-rule enforcement remain separate from Mapping.
 
 ---
 
-# Automatic Inference
+## Design Principles
 
-Most logical objects are imported through explicit mappings.
-
-Object arrays not claimed by explicit child mappings are imported automatically.
-
-For each inferred object array, the Mapping module:
-
-* infers a table name
-* generates row identities
-* creates rows
-* flattens object properties into columns
-
-Explicit mappings always override inferred behaviour.
-
----
-
-# Flattening
-
-Objects flatten into relational columns.
-
-For example:
-
-```text
-Codebase.Version
-Consensus.Type
-```
-
-Arrays are never flattened.
-
-Instead, arrays become child tables.
-
-This preserves the relational structure while avoiding repeated column groups.
-
----
-
-# Expressions
-
-Expressions provide a common language across discovery and import.
-
-The primary entry point is:
-
-```text
-current()
-```
-
-Examples include:
-
-```text
-current().path("chain_name").scalar()
-
-current().path("_basename")
-
-capture("owner")
-
-literal("Chain:")
-```
-
-Expressions are evaluated within strongly typed execution contexts and are reusable throughout the Mapping module.
-
----
-
-# Design Principles
-
-The Mapping module follows several core principles.
-
-* Discovery locates data.
-* Import shapes data.
-* Schema inference derives relational structure.
-* Validation is outside the Mapping module.
-* Tables represent logical entities rather than physical storage.
-* Discovery is independent of storage media.
-* Import is independent of physical layout.
-* Explicit configuration overrides inference.
-* Automatic inference minimises boilerplate.
-* Every stage operates over immutable data.
-* Stable identities are independent of business keys.
-* External data is represented relationally without interpreting business meaning.
+- Discovery locates and describes data; Import transforms it into relational data.
+- Discovery results are related by result identifiers rather than nested child collections.
+- Physical identity and discovery-result identity are distinct.
+- The staging interface separates discovery structure from import logic.
+- SQL expressions provide the transformation mechanism for Import.
+- Database creation is separate from transactional import execution.
+- The orchestrator coordinates stages without duplicating their responsibilities.
+- Discovery does not determine the final relational schema.
+- Validation and business semantics remain outside Mapping.

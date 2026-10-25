@@ -7,5 +7,8 @@ export interface DiscoveryNavigator<
 > {
   accepts(current: DiscoveryValue): current is TCurrent;
   next(current: TCurrent): readonly TNext[];
-  identityParts(current: TCurrent, next: TNext): readonly DiscoveryIdentityPart[];
+  identityParts(
+    current: TCurrent,
+    next: TNext,
+  ): readonly DiscoveryIdentityPart[];
 }

@@ -1,4 +1,7 @@
-import { isStructuredValue, type StructuredValue } from "../mapping/value/StructuredValue.js";
+import {
+  isStructuredValue,
+  type StructuredValue,
+} from "../mapping/value/StructuredValue.js";
 
 export type PrimitiveColumnValue = string | number | boolean | null;
 //export type ColumnValue = PrimitiveColumnValue;

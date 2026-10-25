@@ -6,17 +6,20 @@ import { ImportInstructionResult } from "./ImportInstructionResult.js";
 import { ImportReport } from "./ImportReport.js";
 import type { ImportRuleset } from "./ImportRuleset.js";
 
-export interface ImportEngineSpec {
+export interface ImportEngineSpec<TInputBatch extends InputBatch = InputBatch> {
   readonly engine: Engine;
   readonly databaseName: string;
   readonly discovery?: DiscoveryResults;
-  readonly ruleset: (sql: InputBatch) => ImportRuleset;
+  readonly ruleset: (sql: TInputBatch) => ImportRuleset;
 }
 
 export class ImportEngine {
-  static import(spec: ImportEngineSpec): ImportReport {
-    const { engine, databaseName, discovery, ruleset } = spec;
-    const importRuleset = ruleset(engine.input());
+  static import<TInputBatch extends InputBatch>(
+    spec: ImportEngineSpec<TInputBatch>,
+  ): ImportReport {
+    const { engine, discovery } = spec;
+
+    const importRuleset = spec.ruleset(engine.input() as TInputBatch);
 
     // Transaction control and database selection belong to ImportEngine.
     for (const instruction of importRuleset.instructions) {
@@ -24,29 +27,29 @@ export class ImportEngine {
         if (
           statement.kind === "begin" ||
           statement.kind === "commit" ||
-          statement.kind === "use_database"
+          statement.kind === "use_database" ||
+          statement.kind === "create_database"
         ) {
           throw new Error(
             `Import instruction "${instruction.name}" ` +
-            `cannot contain "${statement.kind}" statements.`,
+              `cannot contain "${statement.kind}" statements.`,
           );
         }
       }
     }
 
-    engine.setCurrentDatabase(databaseName);
+    engine.setCurrentDatabase(spec.databaseName);
 
     const options: StatementExecutionOptions = {
-      sources: discovery
-        ? new Map([["discovery", discovery]])
-        : new Map(),
+      sources: discovery ? new Map([["discovery", discovery]]) : new Map(),
     };
 
     const instructionResults: ImportInstructionResult[] = [];
 
     engine.beginTx();
 
-    for (let instructionIndex = 0;
+    for (
+      let instructionIndex = 0;
       instructionIndex < importRuleset.instructions.length;
       instructionIndex++
     ) {
@@ -67,9 +70,10 @@ export class ImportEngine {
               instruction,
               status: "failed",
               failedStatementIndex: statementIndex,
-              error: error instanceof Error
-                ? `${error.name}: ${error.message}`
-                : String(error),
+              error:
+                error instanceof Error
+                  ? `${error.name}: ${error.message}`
+                  : String(error),
             }),
           );
 

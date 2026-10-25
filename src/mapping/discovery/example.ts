@@ -26,15 +26,6 @@ import { StructuredArrayNavigator } from "./navigation/StructuredArrayNavigator.
 import { StructuredObjectNavigator } from "./navigation/StructuredObjectNavigator.js";
 
 export const exampleChainRegistry_DiscoveryDefinition = () => {
-  console.log("starting chain reg");
-
-  // const logoUrisNode = new DiscoveryNode({
-  //   navigator: new StructuredObjectNavigator(),
-  //   matcher: propertyName().eq("logo_URIs"),
-  //   nodeType: "LogoUris",
-  //   children: [],
-  // });
-
   const assetNode = new DiscoveryNode({
     navigator: new StructuredArrayNavigator(),
     matcher: isNull(literal(null)),
@@ -50,21 +41,6 @@ export const exampleChainRegistry_DiscoveryDefinition = () => {
     },
     children: [],
   });
-  // const assetNode = new DiscoveryNode({
-  //   navigator: new StructuredArrayNavigator(),
-  //   matcher: isNull(literal(null)),
-  //   nodeType: "asset",
-  //   captures: {
-  //     base: value("base"),
-  //     owner: concat(
-  //       literal("Asset:"),
-  //       capture("chainDirectoryName"),
-  //       literal(":"),
-  //       json_value(payload(), "$.base"),
-  //     ),
-  //   },
-  //   children: [],
-  // });
 
   const assetsArrayNode = new DiscoveryNode({
     navigator: new StructuredObjectNavigator(),
@@ -81,29 +57,19 @@ export const exampleChainRegistry_DiscoveryDefinition = () => {
     children: [assetsArrayNode],
   });
 
-  const imagesDirectoryNode = new DiscoveryNode({
-    navigator: new DirectoryNavigator(),
-    matcher: every(isDirectory(), basename().eq("images")),
-    nodeType: "chainFile",
-    children: [/*imageFileNode*/],
-  });
-
   const chainFileNode = new DiscoveryNode({
     navigator: new DirectoryNavigator(),
     matcher: every(isFile(), basename().eq("chain.json")),
     decoder: new JsonDecoder(),
     nodeType: "chainFile",
     captures: {
-      owner: concat(
-        literal("Chain:"),
-        json_value(capture("chain"), "$"),
-      ),
+      owner: concat(literal("Chain:"), json_value(capture("chain"), "$")),
     },
     children: [],
   });
 
   const chainCollection = new DiscoveryNode({
-    navigator: new DirectoryNavigator(), // was informing how to navigate the parent node's navigation object
+    navigator: new DirectoryNavigator(),
     matcher: contains(
       some(
         every(isFile(), basename().eq("chain.json")),
@@ -167,7 +133,7 @@ export const exampleChainRegistry_DiscoveryDefinition = () => {
     nodeType: "registry",
   });
 
-  const registryRootDirectory = new Directory("./temp");
+  const registryRootDirectory = new Directory("./external/testRegistry");
 
   const testRegistryRootDirectory = new FsDiscoverySource(
     registryRootDirectory,

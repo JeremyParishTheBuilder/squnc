@@ -1,21 +1,45 @@
-Discovery Staging Contract
+# Discovery Staging Contract
 
-Each discovered result has:
+## Purpose
 
-- a unique result ID
-- a Discovery node type
-- a physical Discovery identity
-- a discovered value
-- an optional parent result ID
+Discovery produces a collection of `DiscoveryResult` records. Import accesses those records through a relational staging source, allowing standard SQL expressions and statements to transform discovered data into relational data.
 
-The collection of results forms a tree through parentResultId.
+## Discovery Results
 
-The tree may be represented in memory using children, parent IDs, or both, but result IDs—not physical identities—define result relationships.
+Each `DiscoveryResult` contains:
 
-The staging representation exposes the result graph relationally to Import.
+- `resultId`: unique result ID within its `DiscoveryResults` collection
+- `parentResultId`: parent result ID, or `null` for a root result
+- `nodeType`: type identifying the Discovery node that produced the result
+- `identity`: physical `DiscoveryIdentity`
+- `value`: discovered value
+- `metadata`: source and other descriptive metadata
+- `captures`: named values captured during Discovery
 
-Import may navigate ancestors and descendants through result relationships rather than relying on captured contextual values.
+Result IDs identify result records and establish relationships. Physical Discovery identities describe discovered values and are not substitutes for result IDs.
 
-Import Identity remains independent of DiscoveryResult identity.
+The collection represents relationships through `parentResultId`, not nested `children` arrays. Result IDs are local to their collection; combining results from multiple discovery runs requires care to avoid ID collisions.
 
-Structured values remain accessible through the expression system rather than requiring Import to depend directly on a dialect-specific JSON function.
+## Relational Staging Interface
+
+The staging source exposes each result as a row with these columns:
+
+| Column | SQL type | Nullable |
+|---|---|---|
+| `resultId` | `SQL_INTEGER` | No |
+| `parentResultId` | `SQL_INTEGER` | Yes |
+| `nodeType` | `SQL_VARCHAR` | No |
+| `identity` | `SQL_JSON` | No |
+| `value` | `SQL_JSON` | Yes |
+| `metadata` | `SQL_JSON` | No |
+| `captures` | `SQL_JSON` | No |
+
+The staging interface adapts Discovery data into values accessible through the query expression system. Import can filter by `nodeType`, extract fields from structured values, and relate results through `resultId` and `parentResultId`.
+
+## Consumer Boundary
+
+The relational staging interface exposes Discovery results to downstream processing through a queryable representation. Consumers can filter results by node type, inspect discovered values and metadata, and use result IDs to relate records.
+
+Discovery defines the staging data and relationship identifiers. Consumers determine how to interpret that data and transform it into their own representations.
+
+The staging contract does not prescribe downstream schemas, transformation rules, or business validation.

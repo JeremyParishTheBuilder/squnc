@@ -14,18 +14,14 @@ export class ImportReport {
 
   constructor(spec: ImportReportSpec) {
     this.ruleset = spec.ruleset;
-    this.instructionResults = Object.freeze([
-      ...spec.instructionResults,
-    ]);
+    this.instructionResults = Object.freeze([...spec.instructionResults]);
     this.committed = spec.committed;
   }
 
   get passed(): boolean {
     return (
       this.committed &&
-      this.instructionResults.every(
-        (result) => result.status === "succeeded",
-      )
+      this.instructionResults.every((result) => result.status === "succeeded")
     );
   }
 
@@ -49,8 +45,8 @@ export class ImportReport {
       description: this.ruleset.description,
       passed: this.passed,
       committed: this.committed,
-      instructionResults: this.instructionResults.map(
-        (result) => result.toJSON(),
+      instructionResults: this.instructionResults.map((result) =>
+        result.toJSON(),
       ),
     };
   }

@@ -7,8 +7,18 @@ import type { DiscoveryNavigator } from "./navigation/DiscoveryNavigator.js";
 import type { DiscoveryValue } from "../value/DiscoveryValue.js";
 import type { DiscoveryResults } from "./DiscoveryResults.js";
 import type { DiscoveryPayload } from "./DiscoveryPayload.js";
-import type { DiscoveryMetadata, ProcessingMetadata, SourceMetadata, StructuralPosition } from "./DiscoveryMetadata.js";
-import { isStructuredElement, isStructuredProperty, isStructuredValue, type StructuredValue } from "../value/StructuredValue.js";
+import type {
+  DiscoveryMetadata,
+  ProcessingMetadata,
+  SourceMetadata,
+  StructuralPosition,
+} from "./DiscoveryMetadata.js";
+import {
+  isStructuredElement,
+  isStructuredProperty,
+  isStructuredValue,
+  type StructuredValue,
+} from "../value/StructuredValue.js";
 import { Directory } from "./nodejs/Directory.js";
 import { File } from "./nodejs/File.js";
 
@@ -29,10 +39,7 @@ export interface DiscoveryNodeSpec<
 
 export class DiscoveryNode {
   constructor(
-    readonly spec: DiscoveryNodeSpec<
-      DiscoveryValue,
-      DiscoveryValue
-    >,
+    readonly spec: DiscoveryNodeSpec<DiscoveryValue, DiscoveryValue>,
   ) {}
 
   discover(
@@ -51,7 +58,6 @@ export class DiscoveryNode {
     const candidates = navigator.next(context.current);
 
     for (const candidate of candidates) {
-
       const candidateContext = context.withCurrent(candidate);
 
       if (!this.spec.matcher.evaluate(candidateContext)) {
@@ -94,8 +100,7 @@ export class DiscoveryNode {
 
       let childContext = candidateContext
         .withCurrent(current)
-        .withIdentityParts(
-          navigator.identityParts(context.current, candidate))
+        .withIdentityParts(navigator.identityParts(context.current, candidate))
         .withPayload(payload);
 
       for (const [name, builder] of Object.entries(this.spec.captures ?? {})) {
@@ -115,11 +120,7 @@ export class DiscoveryNode {
       );
 
       for (const childNode of this.spec.children) {
-          childNode.discover(
-            discoveryResults,
-            result.resultId,
-            childContext,
-          );
+        childNode.discover(discoveryResults, result.resultId, childContext);
       }
 
       results.push(result);
@@ -127,9 +128,7 @@ export class DiscoveryNode {
   }
 }
 
-function metadataFromSource(
-  value: DiscoveryValue,
-): SourceMetadata | undefined {
+function metadataFromSource(value: DiscoveryValue): SourceMetadata | undefined {
   if (value instanceof File) {
     return {
       kind: "file",
@@ -169,9 +168,7 @@ function structuralPositionFrom(
   return undefined;
 }
 
-function payloadFromValue(
-  value: DiscoveryValue,
-): DiscoveryPayload {
+function payloadFromValue(value: DiscoveryValue): DiscoveryPayload {
   if (isStructuredProperty(value) || isStructuredElement(value)) {
     return value.value;
   }

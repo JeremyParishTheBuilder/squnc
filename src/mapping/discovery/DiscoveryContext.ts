@@ -1,5 +1,8 @@
 import type { DiscoveryValue } from "../value/DiscoveryValue.js";
-import type { DiscoveryIdentity, DiscoveryIdentityPart } from "./DiscoveryIdentity.js";
+import type {
+  DiscoveryIdentity,
+  DiscoveryIdentityPart,
+} from "./DiscoveryIdentity.js";
 import type { StructuredValue } from "../value/StructuredValue.js";
 
 export class DiscoveryContext {
@@ -42,7 +45,7 @@ export class DiscoveryContext {
       this.current,
       this.captures,
       this.identity,
-      payload
+      payload,
     );
   }
 }

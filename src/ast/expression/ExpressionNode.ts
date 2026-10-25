@@ -29,7 +29,7 @@ import type {
   JsonValueExpressionNode,
   ResolvedJsonValueExpressionNode,
 } from "./JsonValueExpressionNode.js";
-import type { 
+import type {
   JsonQueryExpressionNode,
   ResolvedJsonQueryExpressionNode,
 } from "./JsonQueryExpressionNode.js";

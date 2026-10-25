@@ -1,7 +1,8 @@
+import { type QueryPlan } from "../../evaluation/plan/QueryPlan.js";
 import {
-  type QueryPlan,
-} from "../../evaluation/plan/QueryPlan.js";
-import { TableScanNode, queryColumnsFromTable } from "../../evaluation/plan/TableScanNode.js";
+  TableScanNode,
+  queryColumnsFromTable,
+} from "../../evaluation/plan/TableScanNode.js";
 import { bindQuery } from "../query.js";
 import type { SemanticAnalyzer } from "../SemanticAnalyzer.js";
 import type { BoundRelation } from "./BoundRelation.js";
@@ -25,7 +26,10 @@ import type { Predicate } from "../../evaluation/predicate/Predicate.js";
 import type { RowView } from "../../relational/RowView.js";
 import { InnerJoinPlanNode } from "../../evaluation/plan/join/InnerJoinNode.js";
 import type { DiscoveryResultsNode } from "../../ast/tabular/DiscoveryResultsNode.js";
-import { discoveryColumns, DiscoveryScanNode } from "../../evaluation/plan/DiscoveryScanNode.js";
+import {
+  discoveryColumns,
+  DiscoveryScanNode,
+} from "../../evaluation/plan/DiscoveryScanNode.js";
 import { DiscoveryResults } from "../../mapping/discovery/DiscoveryResults.js";
 import { DISCOVERY_RESULTS_SOURCE } from "../../types/ExecutionSource.js";
 
@@ -64,9 +68,7 @@ function bindDiscoveryResults(
     semantic.ctx.sources?.get(DISCOVERY_RESULTS_SOURCE);
 
   if (!(discoveryResults instanceof DiscoveryResults)) {
-    throw new Error(
-      "Discovery source requires DiscoveryResults.",
-    );
+    throw new Error("Discovery source requires DiscoveryResults.");
   }
 
   const columns = discoveryColumns();

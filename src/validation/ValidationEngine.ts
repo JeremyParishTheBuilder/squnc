@@ -21,9 +21,9 @@ export interface ValidationEngineSpec {
 export class ValidationEngine {
   static validate(spec: ValidationEngineSpec): ValidationReport {
     const sql = spec.engine.input();
-    const results: ValidationRuleResult[] = spec.ruleset(sql).rules.map((rule) =>
-      evaluateRule(spec.engine, spec.databaseName, rule),
-    );
+    const results: ValidationRuleResult[] = spec
+      .ruleset(sql)
+      .rules.map((rule) => evaluateRule(spec.engine, spec.databaseName, rule));
 
     return new ValidationReport({
       ruleResults: results,

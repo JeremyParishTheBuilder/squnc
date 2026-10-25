@@ -1,5 +1,5 @@
 import type { DiscoveryResults } from "../mapping/discovery/DiscoveryResults.js";
-import { JsonValuePath } from "../mapping/import/JsonValuePath.js";
+import { JsonValuePath } from "../mapping/value/JsonValuePath.js";
 import type { ColumnValue } from "../types/ColumnValue.js";
 import { CaseBuilder } from "./expression/CaseBuilder.js";
 import { CastBuilder } from "./expression/CastBuilder.js";
@@ -45,23 +45,18 @@ type DiscoveryColumnName =
   | "nodeType"
   | "identity"
   | "value"
+  | "metadata"
   | "captures";
 
 export function property(name: DiscoveryColumnName) {
   return col(name);
 }
 
-export function json_value(
-  source: ExpressionNode,
-  path: string,
-) {
+export function json_value(source: ExpressionNode, path: string) {
   return new JsonValueExpressionNode(source, JsonValuePath.parse(path));
 }
 
-export function json_query(
-  source: ExpressionNode,
-  path: string,
-) {
+export function json_query(source: ExpressionNode, path: string) {
   return new JsonQueryExpressionNode(source, JsonValuePath.parse(path));
 }
 

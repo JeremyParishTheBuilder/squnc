@@ -7,3 +7,4 @@ export interface ValueResolverContext {
   capture(name: string): StructuredValue;
   rowIdentity?: ImportRowIdentity;
 }
+// TODO, delete?

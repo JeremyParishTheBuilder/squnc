@@ -1,10 +1,15 @@
 import type { DiscoveryContext } from "../../../mapping/discovery/DiscoveryContext.js";
-import { isPrimitiveValue, type PrimitiveValue, type StructuredValue } from "../../../mapping/value/StructuredValue.js";
+import {
+  isPrimitiveValue,
+  type PrimitiveValue,
+  type StructuredValue,
+} from "../../../mapping/value/StructuredValue.js";
 import type { Expression } from "../Expression.js";
 
-export class CaptureExpression implements
-  Expression<DiscoveryContext, StructuredValue>
-{
+export class CaptureExpression implements Expression<
+  DiscoveryContext,
+  StructuredValue
+> {
   constructor(readonly name: string) {}
 
   evaluate(context: DiscoveryContext): StructuredValue {
@@ -12,12 +17,11 @@ export class CaptureExpression implements
   }
 }
 
-export class CaptureScalarExpression
-  implements Expression<DiscoveryContext, PrimitiveValue>
-{
-  constructor(
-    private readonly source: CaptureExpression,
-  ) {}
+export class CaptureScalarExpression implements Expression<
+  DiscoveryContext,
+  PrimitiveValue
+> {
+  constructor(private readonly source: CaptureExpression) {}
 
   evaluate(context: DiscoveryContext): PrimitiveValue {
     const value = this.source.evaluate(context);

@@ -51,7 +51,7 @@ import { ResolvedJsonQueryExpressionNode } from "../ast/expression/JsonQueryExpr
 export function bindExpression(
   expr: ResolvedExpressionNode,
   binder: ColumnBinder,
-): Expression<RowView, ColumnValue> { 
+): Expression<RowView, ColumnValue> {
   switch (expr.kind) {
     case "literal":
       return new LiteralExpression(expr.value);
@@ -137,20 +137,14 @@ export function resolveExpression(
       const source = resolveExpression(expr.source, scope);
       assertJsonSource(source);
 
-      return new ResolvedJsonValueExpressionNode(
-        source,
-        expr.path,
-      );
+      return new ResolvedJsonValueExpressionNode(source, expr.path);
     }
 
     case "json_query": {
       const source = resolveExpression(expr.source, scope);
       assertJsonSource(source);
 
-      return new ResolvedJsonQueryExpressionNode(
-        source,
-        expr.path,
-      );
+      return new ResolvedJsonQueryExpressionNode(source, expr.path);
     }
 
     case "temporal":

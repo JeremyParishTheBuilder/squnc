@@ -1,8 +1,8 @@
-import type { JsonValuePath } from "../../../mapping/import/JsonValuePath.js";
+import type { JsonValuePath } from "../../../mapping/value/JsonValuePath.js";
 import {
   isStructuredContainer,
   type StructuredContainer,
-  type StructuredValue
+  type StructuredValue,
 } from "../../../mapping/value/StructuredValue.js";
 import type { Expression } from "../Expression.js";
 
@@ -20,7 +20,12 @@ export class JsonQueryExpression<TContext> implements Expression<
     const result = this.path.resolve(value);
 
     if (result === undefined) {
-      throw new Error(`JSON_QUERY path did not resolve: ${this.path}`);
+      const sourceType =
+        value === null ? "null" : Array.isArray(value) ? "array" : typeof value;
+
+      throw new Error(
+        `JSON_QUERY path "${this.path}" did not resolve. Source type: ${sourceType}.`,
+      );
     }
 
     if (!isStructuredContainer(result)) {

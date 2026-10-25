@@ -15,9 +15,7 @@ export function isStructuredContainer(
   value: unknown,
 ): value is StructuredContainer {
   return (
-    value !== null &&
-    typeof value === "object" &&
-    isStructuredValue(value)
+    value !== null && typeof value === "object" && isStructuredValue(value)
   );
 }
 
@@ -25,7 +23,7 @@ export function isPrimitiveValue(value: unknown): value is PrimitiveValue {
   if (typeof value === "number") {
     return Number.isFinite(value);
   }
-  
+
   if (
     value === null ||
     typeof value === "string" ||
@@ -36,13 +34,13 @@ export function isPrimitiveValue(value: unknown): value is PrimitiveValue {
   }
 
   return false;
-} 
+}
 
 export function isStructuredValue(value: unknown): value is StructuredValue {
   if (typeof value === "number") {
     return Number.isFinite(value);
   }
-  
+
   if (
     value === null ||
     typeof value === "string" ||

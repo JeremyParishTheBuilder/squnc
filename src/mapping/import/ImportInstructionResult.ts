@@ -1,9 +1,6 @@
 import type { ImportInstruction } from "./ImportInstruction.js";
 
-export type ImportInstructionStatus =
-  | "succeeded"
-  | "failed"
-  | "notExecuted";
+export type ImportInstructionStatus = "succeeded" | "failed" | "notExecuted";
 
 export interface ImportInstructionResultSpec {
   readonly instruction: ImportInstruction;

@@ -16,7 +16,10 @@ export class DirectoryNavigator implements DiscoveryNavigator<
     return directory.contents ?? [];
   }
 
-  identityParts(current: Directory, next: FsObject): readonly DiscoveryIdentityPart[] {
+  identityParts(
+    current: Directory,
+    next: FsObject,
+  ): readonly DiscoveryIdentityPart[] {
     return [next.basename];
   }
 }

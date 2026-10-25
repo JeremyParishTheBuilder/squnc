@@ -3,7 +3,6 @@ import { createTestPostgresSql } from '../utils/engineHelpers.ts';
 import { SQL_DECIMAL, SQL_INTEGER, SQL_JSON, SQL_VARCHAR } from '../../src/types/SqlType.ts';
 import { createTableTestSpec } from '../utils/buildSchema.ts';
 import { cast, col, discovery, json_query, json_value } from '../../src/ast/dsl.ts';
-import type { DiscoveryResultId } from '../../src/mapping/discovery/DiscoveryResult.ts';
 import { createTestDiscoveryResults } from '../utils/importHelpers.ts';
 
 describe('Integration::query', () => {
@@ -727,13 +726,14 @@ describe('Integration::query', () => {
   
       expect(result[0].rows).toHaveLength(1);
       expect(result[0].rows[0].values)
-        .toEqual([2, 1, "chainDirectory", [0], {}, {}]);
+        .toEqual([2, 1, "chainDirectory", [0], {}, {}, {}]);
       expect(result[0].columns).toEqual([
         { name: "resultId", type: SQL_INTEGER, nullable: false },
         { name: "parentResultId", type: SQL_INTEGER, nullable: true },
         { name: "nodeType", type: SQL_VARCHAR, nullable: false },
         { name: "identity", type: SQL_JSON, nullable: false },
         { name: "value", type: SQL_JSON, nullable: true },
+        { name: "metadata", type: SQL_JSON, nullable: true },
         { name: "captures", type: SQL_JSON, nullable: false },
       ]);
 
@@ -746,7 +746,6 @@ describe('Integration::query', () => {
       expect(result2[0].rows).toHaveLength(0);
     });
   });
-
   
   describe("JSON expressions", () => {
     const document = {

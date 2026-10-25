@@ -1,5 +1,6 @@
 import type { DiscoveryValue } from "../../../mapping/value/DiscoveryValue.js";
-import { isColumnValue, type ColumnValue } from "../../../types/ColumnValue.js";
+import { isPrimitiveValue } from "../../../mapping/value/StructuredValue.js";
+import { type ColumnValue } from "../../../types/ColumnValue.js";
 import type { Expression } from "../Expression.js";
 
 export class ScalarCastExpression<TContext> implements Expression<
@@ -11,7 +12,7 @@ export class ScalarCastExpression<TContext> implements Expression<
   evaluate(context: TContext): ColumnValue {
     const value = this.source.evaluate(context);
 
-    if (isColumnValue(value)) {
+    if (isPrimitiveValue(value)) {
       return value;
     }
 

@@ -62,8 +62,7 @@ export abstract class InputBatch {
       stmt: Statement,
     ) => QueryResult | void,
     private readonly isInner: boolean = false,
-  ) {
-  }
+  ) {}
 
   protected abstract createInputBatch(): this;
   protected abstract createInnerInputBatch(): this;
@@ -502,8 +501,10 @@ export abstract class InputBatch {
     return GETDATE;
   }
 
-  private tryAsStatement(assertNotInner: boolean = true): Statement | undefined {
-    if(assertNotInner && this.isInner) {
+  private tryAsStatement(
+    assertNotInner: boolean = true,
+  ): Statement | undefined {
+    if (assertNotInner && this.isInner) {
       throw new Error(`Not allowed to finalize inner statement`);
     }
 

@@ -1,4 +1,9 @@
-import { type PrimitiveValue, type StructuredArray, type StructuredObject, type StructuredValue } from "../value/StructuredValue.js";
+import {
+  type PrimitiveValue,
+  type StructuredArray,
+  type StructuredObject,
+  type StructuredValue,
+} from "../value/StructuredValue.js";
 import type { DiscoveryMetadata } from "./DiscoveryMetadata.js";
 import type { DiscoveryResult } from "./DiscoveryResult.js";
 
@@ -34,9 +39,7 @@ function mapToStructuredObject(
   return output;
 }
 
-export function adaptMetadata(
-  metadata: DiscoveryMetadata,
-): StructuredValue {
+export function adaptMetadata(metadata: DiscoveryMetadata): StructuredValue {
   const result: StructuredObject = {};
 
   if (metadata.source) {
