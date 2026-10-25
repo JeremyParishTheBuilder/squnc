@@ -1,10 +1,8 @@
-# TS-ETL-OLAP
+# SQUNC - Relational Query Engine for Data Pipelining
 
-SQUNC is an embedded, in-memory relational engine for importing, editing, validating, querying, and exporting structured datasets.
+**Squnc** is an in-memory relational query engine designed for data pipelining—importing, staging, validating, querying, and exporting structured datasets within CI/CD and ETL workflows. Built around a fluent builder that mirrors SQL query syntax, Squnc ingests raw JSON/CSV inputs into a relational model where schema rules, transformations, and assertions are executed declaratively. Originally developed to process and validate complex registries (such as the Cosmos Chain Registry), its zero-runtime-dependency architecture provides a lightweight, deterministic framework for any structured data source.
 
-Although originally designed for blockchain registries such as the Cosmos Chain Registry, the architecture is intentionally generic and can be adapted to other structured data sources.
-
-Instead of treating JSON files as isolated documents, TS-ETL-OLAP imports them into a relational database where consistency rules, queries, and transformations can be expressed declaratively.
+<img width="300" height="300" alt="squnc-logo" src="https://github.com/user-attachments/assets/00e3b117-5717-4b63-a726-35daf5f3bf46" />
 
 ## Overview
 
