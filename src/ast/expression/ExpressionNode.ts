@@ -89,9 +89,7 @@ export type ExpressionKind =
   | "temporal"
   | "sql_function"
   | "json_value"
-  | "json_query"
-  | "current"
-  | "source";
+  | "json_query";
 
 export interface ExpressionProjection {
   readonly expression: ExpressionNode;

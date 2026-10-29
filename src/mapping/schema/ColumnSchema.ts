@@ -1,23 +1,27 @@
-import { isColumnValue } from "../../types/ColumnValue.js";
 import {
   isSameType,
   sqlTypeFromValue,
   type SqlType,
 } from "../../types/SqlType.js";
+import { isPrimitiveValue } from "../value/StructuredValue.js";
 
 export class ColumnSchema {
   constructor(
     readonly name: string,
     public type?: SqlType,
+    public nullable = false,
   ) {}
 
   observe(value: unknown): void {
-    if (!isColumnValue(value)) {
+    if (value === null || value === undefined) {
+      this.nullable = true;
       return;
     }
 
-    if (value === null) {
-      return;
+    if (!isPrimitiveValue(value)) {
+      throw new Error(
+        `Column '${this.name}' received a non-scalar value.`,
+      );
     }
 
     const observed = sqlTypeFromValue(value);
@@ -28,13 +32,17 @@ export class ColumnSchema {
     }
 
     if (!isSameType(this.type, observed)) {
-      throw new Error(`Column '${this.name}' has inconsistent observed types.`);
+      throw new Error(
+        `Column '${this.name}' has inconsistent observed types.`,
+      );
     }
   }
 
   requireType(): SqlType {
-    if (!this.type) {
-      throw new Error(`Column '${this.name}' has no inferred type.`);
+    if (this.type === undefined) {
+      throw new Error(
+        `Column '${this.name}' has no inferred type.`,
+      );
     }
 
     return this.type;

@@ -16,6 +16,7 @@ import type { InnerJoinStatement } from "./dql/join/InnerJoinStatement.js";
 import type { RightJoinStatement } from "./dql/join/RightJoinStatement.js";
 import type { LeftJoinStatement } from "./dql/join/LeftJoinStatement.js";
 import type { FullJoinStatement } from "./dql/join/FullJoinStatement.js";
+import type { RollbackStatement } from "./session/RollbackStatement.js";
 
 export interface BaseStatement {
   readonly kind: StatementKind;
@@ -24,6 +25,7 @@ export interface BaseStatement {
 export type StatementKind =
   | "begin"
   | "commit"
+  | "rollback"
   | "create_database"
   | "use_database"
   | "create_table"
@@ -42,6 +44,7 @@ export type StatementKind =
 export type Statement =
   | BeginStatement
   | CommitStatement
+  | RollbackStatement
   | CreateDatabaseStatement
   | UseDatabaseStatement
   | CreateTableStatement

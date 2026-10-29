@@ -3,7 +3,6 @@ import type { PostgresInputBatch } from "../input/PostgresInputBatch.js";
 import { col, and, or } from "../ast/dsl.js";
 import { ValidationEngine } from "./ValidationEngine.js";
 import { ValidationRuleset } from "./ValidationRuleset.js";
-import type { InputBatch } from "../input/InputBatch.js";
 
 export const exampleChainRegistry_ValidationRuleset = (
   sql: PostgresInputBatch,
@@ -57,9 +56,7 @@ export function runExampleValidation(
   const report = ValidationEngine.validate({
     engine: EngineRegistry.getInstance().engine(engineName),
     databaseName: databaseName ?? "Test Registry",
-    ruleset: exampleChainRegistry_ValidationRuleset as (
-      sql: InputBatch,
-    ) => ValidationRuleset,
+    ruleset: exampleChainRegistry_ValidationRuleset,
   });
 
   console.log(`${report.failedRules.length} validation rules failed`);

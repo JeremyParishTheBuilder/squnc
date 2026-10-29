@@ -8,6 +8,7 @@ import { exampleChainRegistry_ImportRuleset } from "../../../src/mapping/import/
 import { SQL_VARCHAR } from "../../../src/types/SqlType.ts";
 import type { InlineColumnSpec } from "../../../src/relational/Column.js";
 import { ImportRuleset } from "../../../src/mapping/import/ImportRuleset.ts";
+import { col } from "../../../src/ast/dsl.ts";
 
 describe("MappingOrchestrator", () => {
   it("discovers the test registry and imports chain directory names", () => {
@@ -24,13 +25,10 @@ describe("MappingOrchestrator", () => {
 
     mapping.discovery(discoveryRoot);
 
-    const report = mapping.import({
+    const report = mapping.import<PostgresInputBatch>({
       engine,
-      databaseName: "Test Registry",
-      ruleset: (sql) =>
-        exampleChainRegistry_ImportRuleset(
-          sql as PostgresInputBatch,
-        ),
+      businessDatabaseName: "Test Registry",
+      ruleset: exampleChainRegistry_ImportRuleset,
     });
 
     // Verify that the import completed and committed.
@@ -55,6 +53,7 @@ describe("MappingOrchestrator", () => {
       .sort();
 
     expect(chainNames).toEqual([
+      "akash",
       "cosmoshub",
       "ethereum",
       "ethereumtestnet",
@@ -88,7 +87,7 @@ describe("MappingOrchestrator", () => {
 
     const report = mapping.import<PostgresInputBatch>({
       engine,
-      databaseName: "Test Registry",
+      businessDatabaseName: "Test Registry",
       ruleset: (sql) =>
         ImportRuleset.create({
           name: "Intentional Import Failure",
@@ -138,7 +137,7 @@ describe("MappingOrchestrator", () => {
 
     const report = mapping.import<PostgresInputBatch>({
       engine,
-      databaseName: "Test Registry",
+      businessDatabaseName: "Test Registry",
       ruleset: (sql) =>
         ImportRuleset.create({
           name: "Import Rollback Test",
@@ -183,5 +182,61 @@ describe("MappingOrchestrator", () => {
     expect(() =>
       query.select("*").from("Temporary").execute(),
     ).toThrow();
+  });
+
+  it("infers and builds a business database from discovery results", () => {
+    const engineName = "MAPPING_INFERRED_DATABASE_TEST";
+    const databaseName = "Inferred Registry";
+
+    const registry = EngineRegistry.getInstance();
+    registry.newEngine(engineName, Dialect.Postgres);
+
+    const engine = registry.engine(engineName);
+    const mapping = new MappingOrchestrator();
+
+    mapping.discovery(exampleChainRegistry_DiscoveryDefinition());
+
+    const result = mapping.buildBusinessDatabase(
+      engine,
+      databaseName,
+    );
+
+    expect(result).toBe(databaseName);
+
+    const database = engine.databases.requireByName(databaseName);
+    const rootTable = database.tables.requireByName("chainFile");
+
+    // Two discovered chain files should become root rows.
+    expect(rootTable.numRows).toBe(2);
+
+    // Verify that inferred data is queryable through the engine.
+    const sql = engine.input() as PostgresInputBatch;
+    sql.useDatabase(databaseName).execute();
+
+    const queryResult = sql
+      .select([col("chain_name")])
+      .from("chainFile")
+      .execute();
+
+    const chainNames = queryResult[0].rows
+      .map((row) => row.values[0] as string);
+
+    expect(chainNames).toContain("cosmoshub");
+  });
+
+  it("requires discovery before building a business database", () => {
+    const engineName = "MAPPING_BUILD_WITHOUT_DISCOVERY_TEST";
+
+    const registry = EngineRegistry.getInstance();
+    registry.newEngine(engineName, Dialect.Postgres);
+
+    const engine = registry.engine(engineName);
+    const mapping = new MappingOrchestrator();
+
+    expect(() =>
+      mapping.buildBusinessDatabase(engine, "Inferred Registry"),
+    ).toThrow(
+      "Discovery must run before building the business database.",
+    );
   });
 });

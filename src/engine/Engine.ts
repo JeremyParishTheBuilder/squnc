@@ -3,10 +3,10 @@ import { type EnginePolicy } from "./EnginePolicy.js";
 import { RuleResolver } from "./RuleResolver.js";
 import { type RulesFacadeShape, RulesFacade } from "./RulesFacade.js";
 
-import { type InputBatch } from "../input/InputBatch.js";
 import { PostgresInputBatch } from "../input/PostgresInputBatch.js";
 import { SqlServerInputBatch } from "../input/SqlServerInputBatch.js";
 import { MySqlInputBatch } from "../input/MySqlInputBatch.js";
+import type { PublicInputBatch } from "../input/PublicInputBatch.js";
 
 import { ExecutionContext } from "./ExecutionContext.js";
 import { Transaction } from "./Transaction.js";
@@ -50,20 +50,6 @@ export class Engine {
     return new Engine(dialect);
   }
 
-  // TODO
-  // hasDatabase(name: string): boolean {
-  //   // Check whether this.databases contains the named database.
-  //   return this.databases.getByName(name) ? true : false;
-  // }
-
-  // createDatabase(name: string): void {
-  //   if (this.hasDatabase(name)) {
-  //     throw new Error(`Database "${name}" already exists.`);
-  //   }
-
-  //   this.databases = this.databases.create({ name });
-  // }
-
   ensureDatabase(name: string): Database {
     let database = this.databases.getByName(name);
 
@@ -80,16 +66,17 @@ export class Engine {
   }
 
   //  <input batch>
-  private inputBatch?: InputBatch;
+  private inputBatch?: PublicInputBatch;
 
-  public input(): InputBatch {
+  public input(): PublicInputBatch {
     if (!this.inputBatch) {
       this.inputBatch = this.createInputBatch();
     }
+
     return this.inputBatch;
   }
 
-  private createInputBatch(): InputBatch {
+  private createInputBatch(): PublicInputBatch {
     switch (this.dialect) {
       case Dialect.Postgres:
         return new PostgresInputBatch(this.executeStatement.bind(this));
@@ -99,6 +86,9 @@ export class Engine {
 
       case Dialect.MySQL:
         return new MySqlInputBatch(this.executeStatement.bind(this));
+
+      case undefined:
+        throw new Error(`Engine has no Dialect assigned.`);
 
       default:
         throw new Error(
@@ -146,6 +136,10 @@ export class Engine {
     }
     if (stmt.kind === "commit") {
       this.commitTx();
+      return;
+    }
+    if (stmt.kind === "rollback") {
+      this.rollbackTx();
       return;
     }
 

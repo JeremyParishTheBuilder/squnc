@@ -14,7 +14,6 @@ import { NotPredicateNode } from "./predicate/NotPredicateNode.js";
 import { OrPredicateNode } from "./predicate/OrPredicateNode.js";
 import type { PredicateNode } from "./predicate/PredicateNode.js";
 import { XorPredicateNode } from "./predicate/XorPredicateNode.js";
-import { DiscoveryResultsNode } from "./tabular/DiscoveryResultsNode.js";
 import { TableReferenceNode } from "./tabular/TableReferenceNode.js";
 
 // Expressions
@@ -64,10 +63,6 @@ export function json_query(source: ExpressionNode, path: string) {
 
 export function table(reference: string) {
   return new TableReferenceNode(reference);
-}
-
-export function discovery(results?: DiscoveryResults) {
-  return new DiscoveryResultsNode(results);
 }
 
 // Predicates

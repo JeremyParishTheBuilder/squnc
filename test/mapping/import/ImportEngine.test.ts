@@ -3,19 +3,16 @@ import { createTestPostgresSql, freshEngine } from '../../utils/engineHelpers.js
 import { SQL_INTEGER, SQL_VARCHAR } from '../../../src/types/SqlType.js';
 import { createTestDiscoveryResults } from '../../utils/importHelpers.js';
 import { createTableTestSpec } from '../../utils/buildSchema.js';
-import { discovery, property } from '../../../src/ast/dsl.ts';
+import { property } from '../../../src/ast/dsl.ts';
 import { ImportEngine } from '../../../src/mapping/import/ImportEngine.js';
 import { ImportRuleset } from '../../../src/mapping/import/ImportRuleset.js';
 import type { PostgresInputBatch } from '../../../src/input/PostgresInputBatch.ts';
-import type { InputBatch } from '../../../src/input/InputBatch.ts';
+import { DiscoveryDatabaseBuilder } from '../../../src/mapping/discovery/DiscoveryDatabaseBuilder.js';
 
 describe("ImportEngine::import", () => {
-  it("imports rows from DiscoveryResults and commits the transaction", () => {
+  it("imports rows from discovery database and commits", () => {
     const engine = freshEngine();
     const sql = createTestPostgresSql(engine);
-
-    sql.createDatabase("DB1").execute();
-    sql.useDatabase("DB1").execute();
 
     const discoveryResults = createTestDiscoveryResults([
       {
@@ -32,6 +29,15 @@ describe("ImportEngine::import", () => {
       },
     ]);
 
+    const discoveryDatabaseName = DiscoveryDatabaseBuilder.build({
+      engine,
+      databaseName: "discovery",
+      discoveryResults,
+    });
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
     const ruleset =(
       sql: PostgresInputBatch,
     ) => { return ImportRuleset
@@ -42,7 +48,7 @@ describe("ImportEngine::import", () => {
           sql
             .createTable(
               ...createTableTestSpec("Chains", {
-                NodeType: {
+                chainDirectory: {
                   type: SQL_VARCHAR,
                   nullable: false,
                 },
@@ -51,26 +57,26 @@ describe("ImportEngine::import", () => {
             .asStatement(),
 
           sql
-            .insertInto("Chains", ["NodeType"])
+            .insertInto("Chains", ["chainDirectory"])
             .select(
               sql
               .select([property("nodeType")])
-              .from(discovery())
-              .where(property("nodeType").eq("chainDirectory"))
+              .from("discovery.chainDirectory")
             )
             .asStatement(),
         ],
       });
     }
 
-    const report = ImportEngine.import({
+    const report = ImportEngine.import<PostgresInputBatch>({
       engine,
-      databaseName: "DB1",
-      discovery: discoveryResults,
-      ruleset: ruleset as (sql: InputBatch) => ImportRuleset,
+      businessDatabaseName: "DB1",
+      discoveryDatabaseName,
+      ruleset,
     });
 
     expect(report.passed).toBe(true);
+    expect(report.failed).toBe(false);
     expect(report.committed).toBe(true);
     expect(report.instructionResults).toHaveLength(1);
     expect(report.instructionResults[0].status).toBe("succeeded");  
@@ -136,10 +142,11 @@ describe("ImportEngine::import", () => {
       });
     }
 
-    const report = ImportEngine.import({
+    const report = ImportEngine.import<PostgresInputBatch>({
       engine,
-      databaseName: "DB1",
-      ruleset: ruleset as (sql: InputBatch) => ImportRuleset,
+      businessDatabaseName: "DB1",
+      discoveryDatabaseName: "discovery",
+      ruleset: ruleset,
     });
 
     expect(report.passed).toBe(false);
@@ -164,39 +171,39 @@ describe("ImportEngine::import", () => {
     expect(database.tables.getByName("NeverCreated")).toBeUndefined();
   });
 
-  it("reports a missing discovery source and rolls back", () => {
+  it("fails when the discovery database does not exist", () => {
     const engine = freshEngine();
     const sql = createTestPostgresSql(engine);
 
     sql.createDatabase("DB1").execute();
     sql.useDatabase("DB1").execute();
 
-    const ruleset = (
-      sql: PostgresInputBatch,
-    ) => { return ImportRuleset
-      .create({ name: "Missing Source Import" })
-      .withInstruction({
-        name: "Read Discovery",
-        statements: [
-          sql
-            .select("*")
-            .from(discovery())
-            .asStatement(),
-        ],
-      });
-    }
+    const ruleset = ImportRuleset
+      .create({name: "Missing Discovery Database"})
+      .withInstruction(
+        {
+          name: "Read Discovery",
+          statements: [
+            sql
+              .insertInto("Chains", ["NodeType"])
+              .select(
+                sql.select([property("nodeType")])
+                  .from("UnusedDiscovery.chainDirectory"),
+              ).asStatement(),
+          ]
+        }
+      );
 
     const report = ImportEngine.import({
       engine,
-      databaseName: "DB1",
-      ruleset: ruleset as (sql: InputBatch) => ImportRuleset,
+      businessDatabaseName: "DB1",
+      discoveryDatabaseName: "UnusedDiscovery",
+      ruleset: () => ruleset,
     });
 
     expect(report.passed).toBe(false);
+    expect(report.failed).toBe(true);
     expect(report.committed).toBe(false);
-    expect(report.instructionResults[0].status).toBe("failed");
-    expect(report.instructionResults[0].error)
-      .toMatch(/Discovery source requires DiscoveryResults/i);
   });
 
   it("reports the failing statement index and rolls back the instruction", () => {
@@ -235,10 +242,11 @@ describe("ImportEngine::import", () => {
           ],
         });
 
-    const report = ImportEngine.import({
+    const report = ImportEngine.import<PostgresInputBatch>({
       engine,
-      databaseName: "DB1",
-      ruleset: ruleset as (sql: InputBatch) => ImportRuleset,
+      businessDatabaseName: "DB1",
+      discoveryDatabaseName: "discovery",
+      ruleset: ruleset,
     });
 
     expect(report.passed).toBe(false);
@@ -264,6 +272,13 @@ describe("ImportEngine::import", () => {
     sql.useDatabase("DB1").execute();
 
     const discoveryResults = createTestDiscoveryResults([]);
+    discoveryResults.registerNodeTypes(["chainDirectory"]);
+
+    const discoveryDatabaseName = DiscoveryDatabaseBuilder.build({
+      engine,
+      databaseName: "discovery",
+      discoveryResults,
+    });
 
     const ruleset = (sql: PostgresInputBatch) =>
       ImportRuleset.create({ name: "Empty Discovery Test" })
@@ -272,35 +287,38 @@ describe("ImportEngine::import", () => {
           statements: [
             sql.createTable(
               ...createTableTestSpec("Chains", {
-                NodeType: { type: SQL_VARCHAR, nullable: false },
+                chainDirectory: { type: SQL_VARCHAR, nullable: false },
               }),
             ).asStatement(),
 
             sql
-              .insertInto("Chains", ["NodeType"])
+              .insertInto("Chains", ["chainDirectory"])
               .select(
                 sql
                   .select([property("nodeType")])
-                  .from(discovery())
-                  .where(property("nodeType").eq("chainDirectory")),
+                  .from("discovery.chainDirectory")
               )
               .asStatement(),
           ],
         });
 
-    const report = ImportEngine.import({
+    const report = ImportEngine.import<PostgresInputBatch>({
       engine,
-      databaseName: "DB1",
-      discovery: discoveryResults,
-      ruleset: ruleset as (sql: InputBatch) => ImportRuleset,
+      businessDatabaseName: "DB1",
+      discoveryDatabaseName,
+      ruleset,
     });
 
     expect(report.passed).toBe(true);
+    expect(report.failed).toBe(false);
     expect(report.committed).toBe(true);
     expect(report.instructionResults[0].status).toBe("succeeded");
 
     const result = sql.select("*").from("Chains").execute();
 
+    console.log(result[0].rows);
+
+    expect(result[0]).toBeDefined();
     expect(result[0].rows).toHaveLength(0);
   });
 });

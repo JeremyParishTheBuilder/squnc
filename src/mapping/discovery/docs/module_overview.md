@@ -28,11 +28,16 @@ DiscoveryNode traversal
       v
 DiscoveryResults
       |
-      v
-Relational Staging Source
-      |
-      v
-Downstream Processing
+      +-------------------------+
+      |                         |
+      v                         v
+Relational Staging Source   Schema Inference
+      |                         |
+      v                         v
+Custom Import             Database Construction
+      |                         |
+      v                         v
+Relational Database       Relational Database
 ```
 
 The main components are:
@@ -156,11 +161,17 @@ The staging contract defines the data exposed to consumers. It does not prescrib
 
 ## Relationship to Other Modules
 
-Discovery is responsible for locating data and producing a consistent representation of the results.
+Discovery locates external data and produces a consistent representation of the results.
 
-The relational staging source provides the boundary through which downstream modules can consume those results. Import can use this interface to transform discovered data into relational data, but the Discovery model is not defined by Import's rulesets, SQL statements, or target schema.
+Downstream Mapping operations consume DiscoveryResults in two distinct ways:
 
-Discovery does not perform automatic relational schema inference, construct application-specific database schemas, or execute Import rulesets.
+Schema inference and database construction observe discovered payloads to infer a relational schema and construct a populated business database.
+
+Import consumes the relational staging interface to execute custom SQL-based transformations against a target database.
+
+Discovery does not perform relational schema inference, construct application-specific database schemas, or execute Import rulesets. These responsibilities remain separate so the discovery model is independent of downstream transformation rules and relational design.
+
+The Engine and Relational modules provide the database representation and execution infrastructure used by downstream operations. Validation remains a separate concern.
 
 ## Design Principles
 
@@ -170,4 +181,4 @@ Discovery does not perform automatic relational schema inference, construct appl
 - Store parent relationships through IDs rather than nested child collections.
 - Preserve useful captures and source metadata.
 - Expose results through a relational staging interface.
-- Keep Discovery independent of downstream transformation rules and relational schemas.
+- Keep Discovery independent of downstream transformation rules and relational schemas, while exposing results for both inferred database construction and custom Import.
