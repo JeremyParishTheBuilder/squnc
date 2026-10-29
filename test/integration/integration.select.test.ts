@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createTestMySqlSql, createTestPostgresSql } from '../utils/engineHelpers.ts';
+import { createTestMySqlSql, createTestPostgresSql, freshEngine } from '../utils/engineHelpers.ts';
 import { and, col, or, table } from '../../src/ast/dsl.ts';
 import { SQL_DECIMAL, SQL_INTEGER, SQL_VARCHAR } from '../../src/types/SqlType.ts';
 import { createTableTestSpec } from '../utils/buildSchema.ts';
@@ -945,6 +945,42 @@ describe('Integration::select', () => {
           .as("a")
           .execute(),
       ).toThrow(/ambiguous/i);
+    });
+  });
+
+  describe("cross-database table references", () => {
+    it("selects from a table in another database", () => {
+      const engine = freshEngine();
+      const sql = createTestPostgresSql(engine);
+
+      sql.createDatabase("DB1").execute();
+      sql.createDatabase("DB2").execute();
+
+      sql.useDatabase("DB2").execute();
+
+      sql
+        .createTable(
+          ...createTableTestSpec("T1", {
+            Id: {
+              type: SQL_INTEGER,
+              nullable: false,
+            },
+          }),
+        )
+        .execute();
+
+      sql.insertInto("T1", ["Id"]).values([[42]]).execute();
+
+      // Select from DB2 while DB1 is the current database.
+      sql.useDatabase("DB1").execute();
+
+      const result = sql
+        .select("*")
+        .from("DB2.T1")
+        .execute();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].rows.map((row) => row.values)).toEqual([[42]]);
     });
   });
 });

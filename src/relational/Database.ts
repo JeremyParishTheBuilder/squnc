@@ -19,8 +19,6 @@ import type { ColumnInput } from "../types/ColumnInput.js";
 import { DEFAULT } from "../dialect/keywords.js";
 import { isAssignable, isSameType, type SqlType } from "../types/SqlType.js";
 
-const _MAX_DEPTH = 25;
-
 export type DatabaseId = number & { readonly __brand: "DatabaseId" };
 
 export class Database extends Immutable {

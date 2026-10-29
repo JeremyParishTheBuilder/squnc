@@ -1,3 +1,4 @@
+import { collectNodeTypes } from "./collectNodeTypes.js";
 import { DiscoveryContext } from "./DiscoveryContext.js";
 import { DiscoveryIdentity } from "./DiscoveryIdentity.js";
 import type { DiscoveryNode } from "./DiscoveryNode.js";
@@ -12,6 +13,8 @@ export class DiscoveryRoot {
 
   discover(): DiscoveryResults {
     const discoveryResults = new DiscoveryResults();
+
+    discoveryResults.registerNodeTypes(collectNodeTypes(this.node));
 
     const current = this.physicalSource.open();
 

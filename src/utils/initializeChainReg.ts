@@ -1,7 +1,7 @@
 import { EngineRegistry } from "../engine/EngineRegistry.js";
 import { type PostgresInputBatch } from "../input/PostgresInputBatch.js";
 import { ImportMapping } from "../mapping/import/oldTypes/ImportMapping.js";
-import { ImportPipeline } from "../mapping/pipeline/old/ImportPipeline.js";
+//import { ImportPipeline } from "../mapping/pipeline/old/ImportPipeline.js";
 // import {
 //   captureScalar,
 //   case_,
@@ -146,34 +146,34 @@ export function exampleChainRegistry_buildDatabase(
 
   const importRoots: ImportRoot[] = [testRegistryImportRoot];
 
-  const result = ImportPipeline.build({
-    importRoots: importRoots,
-    databaseName: "Test Registry",
-    existingDatabases: engine.databases,
-    sourceIdentity: "Test Registry",
-  });
+  // const result = ImportPipeline.build({
+  //   importRoots: importRoots,
+  //   databaseName: "Test Registry",
+  //   existingDatabases: engine.databases,
+  //   sourceIdentity: "Test Registry",
+  // });
 
-  engine.install(result.databases);
+  //engine.install(result.databases);
 
   console.log(EngineRegistry.getInstance().engine().databases.databases);
 
   sql.useDatabase("test registry").execute();
 
   console.log("tables:");
-  const tablesMap = result.databases.requireByName("Test Registry").tables;
-  for (const table of tablesMap.values()) {
-    console.log(table.name);
-    if (table.name === "Chains") {
-      for (const column of table.columns.values()) {
-        console.log(column.name);
-      }
-    }
-    if (table.name === "Images") {
-      for (const column of table.columns.values()) {
-        console.log(column.name);
-      }
-    }
-  }
+  //const tablesMap = result.databases.requireByName("Test Registry").tables;
+  // for (const table of tablesMap.values()) {
+  //   console.log(table.name);
+  //   if (table.name === "Chains") {
+  //     for (const column of table.columns.values()) {
+  //       console.log(column.name);
+  //     }
+  //   }
+  //   if (table.name === "Images") {
+  //     for (const column of table.columns.values()) {
+  //       console.log(column.name);
+  //     }
+  //   }
+  // }
 
   const chainResult = sql.select("*").from("Chains").execute()[0];
   console.log("chainResult");

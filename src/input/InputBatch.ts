@@ -38,6 +38,7 @@ import {
 import { JoinBuilder } from "../statements/dql/join/JoinStatement.js";
 import type { QueryProjection } from "../ast/query/QueryProjection.js";
 import type { TableReferenceNode } from "../ast/tabular/TableReferenceNode.js";
+import { RollbackBuilder } from "../statements/session/RollbackStatement.js";
 
 export abstract class InputBatch {
   private statements: Statement[] = [];
@@ -46,6 +47,7 @@ export abstract class InputBatch {
   static statementStarters = [
     "begin",
     "commit",
+    "rollback",
     "createDatabase",
     "createTable",
     "alterTable",
@@ -136,6 +138,14 @@ export abstract class InputBatch {
     this.assertAllowed("commit", fragment);
     this.finalizeStatement();
     this.currentBuilder = new CommitBuilder();
+    this.finalizeStatement();
+    return this;
+  }
+
+  protected rollback(fragment: string = "ROLLBACK") {
+    this.assertAllowed("rollback", fragment);
+    this.finalizeStatement();
+    this.currentBuilder = new RollbackBuilder();
     this.finalizeStatement();
     return this;
   }

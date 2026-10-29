@@ -6,6 +6,7 @@ import { DiscoveryResult, DiscoveryResultId } from "./DiscoveryResult.js";
 
 export class DiscoveryResults {
   private readonly results = new Map<DiscoveryResultId, DiscoveryResult>();
+  private readonly nodeTypes = new Set<string>();
   private nextResultId = 1;
 
   public getNextResultId(): DiscoveryResultId {
@@ -32,6 +33,8 @@ export class DiscoveryResults {
       captures,
     );
 
+    this.nodeTypes.add(nodeType);
+
     this.results.set(resultId, result);
 
     return result;
@@ -39,5 +42,15 @@ export class DiscoveryResults {
 
   public getAll(): readonly DiscoveryResult[] {
     return [...this.results.values()];
+  }
+
+  public registerNodeTypes(nodeTypes: Iterable<string>): void {
+    for (const nodeType of nodeTypes) {
+      this.nodeTypes.add(nodeType);
+    }
+  }
+
+  public getNodeTypes(): readonly string[] {
+    return [...this.nodeTypes];
   }
 }

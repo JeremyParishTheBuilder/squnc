@@ -7,8 +7,6 @@ import { col } from "../../src/ast/dsl.js";
 import { SQL_DECIMAL, SQL_VARCHAR } from "../../src/types/SqlType.js";
 import { createTableTestSpec } from "../utils/buildSchema.js";
 import type { PostgresInputBatch } from "../../src/input/PostgresInputBatch.js";
-import type { InputBatch } from "../../src/input/InputBatch.js";
-
 
 describe("ValidationEngine::validate", () => {
   it("passes when a UNIQUE validation rule is satisfied", () => {
@@ -669,7 +667,7 @@ describe("ValidationEngine::validate participants", () => {
     const report = ValidationEngine.validate({
       engine,
       databaseName: "DB1",
-      ruleset: ruleset as (sql: InputBatch) => ValidationRuleset,
+      ruleset,
     });
 
     expect(report.passed).toBe(false);
@@ -729,7 +727,7 @@ describe("ValidationEngine::validate participants", () => {
     const report = ValidationEngine.validate({
       engine,
       databaseName: "DB1",
-      ruleset: ruleset as (sql: InputBatch) => ValidationRuleset,
+      ruleset,
     });
 
     expect(report.passed).toBe(false);
@@ -816,7 +814,7 @@ describe("ValidationEngine::validate participants", () => {
     const report = ValidationEngine.validate({
       engine,
       databaseName: "DB1",
-      ruleset: ruleset as (sql: InputBatch) => ValidationRuleset,
+      ruleset,
     });
 
     expect(report.passed).toBe(false);
@@ -888,7 +886,7 @@ describe("ValidationEngine::validate rule evaluation", () => {
     const report = ValidationEngine.validate({
       engine,
       databaseName: "DB1",
-      ruleset: ruleset as (sql: InputBatch) => ValidationRuleset,
+      ruleset,
     });
 
     expect(report.violationCount).toBe(1);
@@ -945,7 +943,7 @@ it("does not modify committed database state", () => {
   const report = ValidationEngine.validate({
     engine,
     databaseName: "DB1",
-    ruleset: ruleset as (sql: InputBatch) => ValidationRuleset,
+    ruleset,
   });
 
   expect(report.failed).toBe(true);
@@ -997,7 +995,7 @@ it("propagates unexpected errors", () => {
     ValidationEngine.validate({
       engine,
       databaseName: "DB1",
-      ruleset: ruleset as (sql: InputBatch) => ValidationRuleset,
+      ruleset,
     }),
   ).toThrow();
 });

@@ -1,9 +1,8 @@
-import { col, discovery, json_value, property } from "../../ast/dsl.js";
+import { json_value, property } from "../../ast/dsl.js";
 import { EngineRegistry } from "../../engine/EngineRegistry.js";
 import type { PostgresInputBatch } from "../../input/PostgresInputBatch.js";
 import type { InlineColumnSpec } from "../../relational/Column.js";
 import { SQL_VARCHAR } from "../../types/SqlType.js";
-import { DiscoveryResults } from "../discovery/DiscoveryResults.js";
 import { ImportEngine } from "./ImportEngine.js";
 import { ImportRuleset } from "./ImportRuleset.js";
 
@@ -12,11 +11,6 @@ export const exampleChainRegistry_ImportRuleset = (sql: PostgresInputBatch) => {
     ImportRuleset.create({
       name: "Chain Registry Test Import",
     })
-      // .withInstruction({
-      //   name: "Create Database",
-      //   description: "Test Registry database creation.",
-      //   statements: [sql.createDatabase("Test Registry").asStatement()],
-      // }) TODO
       .withInstruction({
         name: "Chain Directories",
         description:
@@ -37,8 +31,7 @@ export const exampleChainRegistry_ImportRuleset = (sql: PostgresInputBatch) => {
             .select(
               sql
                 .select([json_value(property("metadata"), "$.source.basename")])
-                .from(discovery())
-                .where(col("nodeType").eq("chainDirectory")),
+                .from("discovery.chainDirectory"),
             )
             .asStatement(),
         ],
@@ -47,14 +40,14 @@ export const exampleChainRegistry_ImportRuleset = (sql: PostgresInputBatch) => {
 };
 
 export function runExampleImport(
-  discoveryResults?: DiscoveryResults,
   engineName: string = "DEFAULT",
-  databaseName: string = "Test Registry",
+  discoveryDatabaseName: string = "Discovery",
+  businessDatabaseName: string = "Test Registry",
 ) {
   const report = ImportEngine.import({
     engine: EngineRegistry.getInstance().engine(engineName),
-    databaseName: databaseName,
-    discovery: discoveryResults,
+    discoveryDatabaseName,
+    businessDatabaseName,
     ruleset: exampleChainRegistry_ImportRuleset,
   });
 

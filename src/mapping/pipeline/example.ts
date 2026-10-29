@@ -1,11 +1,14 @@
 import { EngineRegistry } from "../../engine/EngineRegistry.js";
+import type { PostgresInputBatch } from "../../input/PostgresInputBatch.js";
+import { DEFAULT_DISCOVERY_DATABASE_NAME } from "../discovery/DiscoveryDatabaseBuilder.js";
 import { exampleChainRegistry_DiscoveryDefinition } from "../discovery/example.js";
 import { exampleChainRegistry_ImportRuleset } from "../import/example.js";
 import { MappingOrchestrator } from "./MappingOrchestrator.js";
 
 export function runExampleMappingOrchestration(
   engineName: string = "DEFAULT",
-  databaseName: string = "Test Registry",
+  businessDatabaseName: string = "Test Registry",
+  discoveryDatabaseName: string = DEFAULT_DISCOVERY_DATABASE_NAME,
 ) {
   const mapping = new MappingOrchestrator();
 
@@ -14,9 +17,15 @@ export function runExampleMappingOrchestration(
 
   const engine = EngineRegistry.getInstance().engine(engineName);
 
-  mapping.import({
+  mapping.buildBusinessDatabase(
     engine,
-    databaseName,
+    businessDatabaseName,
+  );
+
+  mapping.import<PostgresInputBatch>({
+    engine,
+    businessDatabaseName,
+    discoveryDatabaseName,
     ruleset: exampleChainRegistry_ImportRuleset,
   });
 

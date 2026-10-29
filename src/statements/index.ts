@@ -9,3 +9,4 @@ export * from "./dql/SelectStatement.js";
 export * from "./session/UseDatabaseStatement.js";
 export * from "./session/BeginStatement.js";
 export * from "./session/CommitStatement.js";
+export * from "./session/RollbackStatement.js";

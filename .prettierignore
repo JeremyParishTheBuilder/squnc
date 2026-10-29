@@ -9,6 +9,7 @@ docs/
 `.vs/`
 `.vscode/`
 `temp/`
+`external/`
 `**/*.md`
 
 dist/

@@ -8,8 +8,9 @@ import type { InsertValuesInput } from "../types/InsertSource.js";
 import type { QueryProjection } from "../ast/query/QueryProjection.js";
 import type { TabularExpressionInput } from "../statements/dql/TabularExpressionReferencer.js";
 import type { TableReferenceNode } from "../ast/tabular/TableReferenceNode.js";
+import type { PublicInputBatch } from "./PublicInputBatch.js";
 
-export class MySqlInputBatch extends InputBatch {
+export class MySqlInputBatch extends InputBatch implements PublicInputBatch {
   constructor(
     executeStatement: (stmt: Statement) => void,
     isInner: boolean = false,
@@ -31,6 +32,10 @@ export class MySqlInputBatch extends InputBatch {
 
   commit() {
     return super.commit();
+  }
+
+  rollback() {
+    return super.rollback();
   }
 
   useDatabase(dbName: string) {

@@ -1,23 +1,30 @@
 import type { Engine } from "../../engine/Engine.js";
-import type { StatementExecutionOptions } from "../../engine/StatementExecutionOptions.js";
-import type { InputBatch } from "../../input/InputBatch.js";
-import type { DiscoveryResults } from "../discovery/DiscoveryResults.js";
+import type { PublicInputBatch } from "../../input/PublicInputBatch.js";
 import { ImportInstructionResult } from "./ImportInstructionResult.js";
 import { ImportReport } from "./ImportReport.js";
 import type { ImportRuleset } from "./ImportRuleset.js";
 
-export interface ImportEngineSpec<TInputBatch extends InputBatch = InputBatch> {
+// export interface ImportEngineSpec<TInputBatch extends PublicInputBatch = PublicInputBatch> {
+//   readonly engine: Engine;
+//   readonly databaseName: string;
+//   readonly discovery?: DiscoveryResults;
+//   readonly ruleset: (sql: TInputBatch) => ImportRuleset;
+// }
+
+export interface ImportEngineSpec<
+  TInputBatch extends PublicInputBatch = PublicInputBatch,
+> {
   readonly engine: Engine;
-  readonly databaseName: string;
-  readonly discovery?: DiscoveryResults;
+  readonly discoveryDatabaseName: string;
+  readonly businessDatabaseName: string;
   readonly ruleset: (sql: TInputBatch) => ImportRuleset;
 }
 
 export class ImportEngine {
-  static import<TInputBatch extends InputBatch>(
+  static import<TInputBatch extends PublicInputBatch>(
     spec: ImportEngineSpec<TInputBatch>,
   ): ImportReport {
-    const { engine, discovery } = spec;
+    const { engine } = spec;
 
     const importRuleset = spec.ruleset(engine.input() as TInputBatch);
 
@@ -38,11 +45,7 @@ export class ImportEngine {
       }
     }
 
-    engine.setCurrentDatabase(spec.databaseName);
-
-    const options: StatementExecutionOptions = {
-      sources: discovery ? new Map([["discovery", discovery]]) : new Map(),
-    };
+    engine.setCurrentDatabase(spec.businessDatabaseName);
 
     const instructionResults: ImportInstructionResult[] = [];
 
@@ -63,7 +66,7 @@ export class ImportEngine {
         const statement = instruction.statements[statementIndex];
 
         try {
-          engine.executeStatement(statement, options);
+          engine.executeStatement(statement);
         } catch (error) {
           instructionResults.push(
             new ImportInstructionResult({

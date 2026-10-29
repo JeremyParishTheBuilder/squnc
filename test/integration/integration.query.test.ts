@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { createTestPostgresSql } from '../utils/engineHelpers.ts';
+import { createTestPostgresSql, freshEngine } from '../utils/engineHelpers.ts';
 import { SQL_DECIMAL, SQL_INTEGER, SQL_JSON, SQL_VARCHAR } from '../../src/types/SqlType.ts';
 import { createTableTestSpec } from '../utils/buildSchema.ts';
-import { cast, col, discovery, json_query, json_value } from '../../src/ast/dsl.ts';
+import { cast, col, json_query, json_value } from '../../src/ast/dsl.ts';
 import { createTestDiscoveryResults } from '../utils/importHelpers.ts';
+import { DiscoveryDatabaseBuilder } from '../../src/mapping/discovery/DiscoveryDatabaseBuilder.ts';
 
 describe('Integration::query', () => {
   describe("Union All", () => {
@@ -694,15 +695,14 @@ describe('Integration::query', () => {
     });
   });
 
-  describe("Discovery tabular source", () => {
-    it("scans and filters DiscoveryResults", () => {
-      const sql = createTestPostgresSql();
-    
+  describe("Discovery database", () => {
+    it("materializes DiscoveryResults as relational tables", () => {
+      const engine = freshEngine();
+      const sql = createTestPostgresSql(engine);
+
       sql.createDatabase("DB1").execute();
       sql.useDatabase("DB1").execute();
-  
-      sql.begin().execute();
-  
+
       const discoveryResults = createTestDiscoveryResults([
         {
           parentResultId: null,
@@ -717,16 +717,30 @@ describe('Integration::query', () => {
           nodeType: "file",
         },
       ]);
-  
+
+      DiscoveryDatabaseBuilder.build({
+        engine,
+        databaseName: "discovery",
+        discoveryResults,
+      });
+
       const result = sql
         .select("*")
-        .from(discovery(discoveryResults))
-        .where(col("nodeType").eq("chainDirectory"))
+        .from("discovery.chainDirectory")
         .execute();
-  
+
+      expect(result).toHaveLength(1);
       expect(result[0].rows).toHaveLength(1);
-      expect(result[0].rows[0].values)
-        .toEqual([2, 1, "chainDirectory", [0], {}, {}, {}]);
+      expect(result[0].rows[0].values).toEqual([
+        2,
+        1,
+        "chainDirectory",
+        [0],
+        {},
+        {},
+        {},
+      ]);
+
       expect(result[0].columns).toEqual([
         { name: "resultId", type: SQL_INTEGER, nullable: false },
         { name: "parentResultId", type: SQL_INTEGER, nullable: true },
@@ -736,14 +750,6 @@ describe('Integration::query', () => {
         { name: "metadata", type: SQL_JSON, nullable: true },
         { name: "captures", type: SQL_JSON, nullable: false },
       ]);
-
-      const result2 = sql
-        .select("*")
-        .from(discovery(discoveryResults))
-        .where(col("nodeType").eq("rpcEndpoint"))
-        .execute();
-  
-      expect(result2[0].rows).toHaveLength(0);
     });
   });
   

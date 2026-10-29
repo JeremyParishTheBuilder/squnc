@@ -14,7 +14,7 @@ Import is responsible for:
 - Managing transaction success and failure.
 - Reporting instruction-level execution results.
 
-Import does not perform Discovery traversal, automatically infer relational schemas, or construct the application's final database schema.
+Import does not perform Discovery traversal, schema inference, or inferred database construction. These are separate Mapping operations. Import can populate a newly created target database or apply custom transformations to an existing database, including one constructed from inferred schema.
 
 ## High-Level Architecture
 
@@ -104,9 +104,15 @@ The staging interface does not imply that general-purpose ancestor or descendant
 `ImportEngine.import()` accepts an import specification containing:
 
 - The `Engine`.
-- The target database name.
-- An optional `DiscoveryResults` collection.
+- The target business database name.
+- The discovery staging database name.
 - A ruleset factory typed to the intended input batch.
+
+`MappingOrchestrator.import()` retains the latest `DiscoveryResults`, builds the discovery staging database when necessary, ensures the target business database exists, and invokes `ImportEngine` with the appropriate database names.
+
+`ImportEngine` executes the ruleset against the configured engine and target database. Discovery data is accessed through the relational staging source rather than by passing the `DiscoveryResults` collection directly to each SQL statement.
+
+The remaining execution sequence, transaction handling, rollback behavior, and report semantics are unchanged.
 
 The engine coordinates execution in the following order:
 
@@ -144,8 +150,13 @@ Initialization errors that throw before a report is produced are not represented
 Discovery locates external data and exposes its results through the staging interface. Import transforms those results into relational data using SQL statements and a target schema.
 
 Validation evaluates rules against relational data and reports constraint or business-rule violations. It is a separate concern from Import's execution reporting.
+`MappingOrchestrator` coordinates Discovery, staging database creation, inferred business database construction, and custom Import.
 
-The broader workflow can coordinate Discovery and Import through `MappingOrchestrator`. The orchestrator retains the latest Discovery results, passes them to Import, and exposes the resulting `ImportReport`. It does not itself implement automatic schema inference or database construction.
+The orchestrator retains the latest `DiscoveryResults` and `ImportReport`. Its `buildBusinessDatabase()` operation explicitly infers a schema and constructs a populated business database from selected discovery results. Its separate `import()` operation ensures the target database exists and executes a custom Import ruleset.
+
+`import()` does not automatically invoke `buildBusinessDatabase()`. Callers choose which operations to run and in what order.
+
+Validation remains independent of Import execution and evaluates business rules against relational data.
 
 ## Design Principles
 

@@ -1,5 +1,5 @@
 import type { Engine } from "../engine/Engine.js";
-import type { InputBatch } from "../input/InputBatch.js";
+import type { PublicInputBatch } from "../input/PublicInputBatch.js";
 import {
   ConstraintViolationError,
   type ConstraintViolationParticipant,
@@ -12,17 +12,20 @@ import type { ValidationRuleset } from "./ValidationRuleset.js";
 import { ValidationViolation } from "./ValidationViolation.js";
 import type { ValidationViolationParticipant } from "./ValidationViolationParticipant.js";
 
-export interface ValidationEngineSpec {
+export interface ValidationEngineSpec<
+  TInputBatch extends PublicInputBatch = PublicInputBatch,
+> {
   engine: Engine;
   databaseName: string;
-  ruleset: (sql: InputBatch) => ValidationRuleset;
+  ruleset: (sql: TInputBatch) => ValidationRuleset;
 }
 
 export class ValidationEngine {
-  static validate(spec: ValidationEngineSpec): ValidationReport {
-    const sql = spec.engine.input();
+  static validate<TInputBatch extends PublicInputBatch>(
+    spec: ValidationEngineSpec<TInputBatch>,
+  ): ValidationReport {
     const results: ValidationRuleResult[] = spec
-      .ruleset(sql)
+      .ruleset(spec.engine.input() as TInputBatch)
       .rules.map((rule) => evaluateRule(spec.engine, spec.databaseName, rule));
 
     return new ValidationReport({
