@@ -1,4 +1,3 @@
-
 import type { ColumnId } from "../../relational/Column.js";
 import type { Databases } from "../../relational/Databases.js";
 import type { ColumnInput } from "../../types/ColumnInput.js";
@@ -29,20 +28,16 @@ export class DatabaseBuilder {
 
   build(databases: Databases): Databases {
     if (databases.getByName(this.databaseName)) {
-      throw new Error(
-        `Database '${this.databaseName}' already exists.`,
-      );
+      throw new Error(`Database '${this.databaseName}' already exists.`);
     }
 
     this.validateStructuralColumns();
 
-    let updatedDatabases = databases.create({
+    const updatedDatabases = databases.create({
       name: this.databaseName,
     });
 
-    let database = updatedDatabases.requireByName(
-      this.databaseName,
-    );
+    let database = updatedDatabases.requireByName(this.databaseName);
 
     // Create all tables and columns before inserting any rows.
     for (const tableSchema of this.schema.tables.values()) {
@@ -50,9 +45,7 @@ export class DatabaseBuilder {
         name: tableSchema.name,
       });
 
-      let table = database.tables.requireByName(
-        tableSchema.name,
-      );
+      let table = database.tables.requireByName(tableSchema.name);
 
       for (const columnSchema of tableSchema.columns.values()) {
         table = table.createColumn({
@@ -93,11 +86,7 @@ export class DatabaseBuilder {
 
       const value = result.value;
 
-      if (
-        value === null ||
-        typeof value !== "object" ||
-        Array.isArray(value)
-      ) {
+      if (value === null || typeof value !== "object" || Array.isArray(value)) {
         continue;
       }
 
@@ -114,21 +103,17 @@ export class DatabaseBuilder {
     for (const [tableName, rows] of rowsByTable) {
       const table = database.tables.requireByName(tableName);
 
-      const inserts: Map<ColumnId, ColumnInput>[] = rows.map(
-        (row) => {
-          const insert = new Map<ColumnId, ColumnInput>();
+      const inserts: Map<ColumnId, ColumnInput>[] = rows.map((row) => {
+        const insert = new Map<ColumnId, ColumnInput>();
 
-          for (const column of table.columns.values()) {
-            const value = row.has(column.name)
-              ? row.get(column.name)!
-              : null;
+        for (const column of table.columns.values()) {
+          const value = row.has(column.name) ? row.get(column.name)! : null;
 
-            insert.set(column.id, value);
-          }
+          insert.set(column.id, value);
+        }
 
-          return insert;
-        },
-      );
+        return insert;
+      });
 
       database = database.addRows(tableName, inserts);
     }
@@ -141,10 +126,7 @@ export class DatabaseBuilder {
       const reserved = [
         IDENTITY_COLUMN,
         ...(table.parentTableName !== undefined
-          ? [
-              PARENT_NODE_TYPE_COLUMN,
-              PARENT_IDENTITY_COLUMN,
-            ]
+          ? [PARENT_NODE_TYPE_COLUMN, PARENT_IDENTITY_COLUMN]
           : []),
       ];
 
@@ -178,17 +160,13 @@ export class DatabaseBuilder {
   ): void {
     const row: RowValues = new Map();
 
-    row.set(
-      IDENTITY_COLUMN,
-      [...identity.parts] as StructuredValue,
-    );
+    row.set(IDENTITY_COLUMN, [...identity.parts] as StructuredValue);
 
     if (parent !== undefined) {
       row.set(PARENT_NODE_TYPE_COLUMN, parent.nodeType);
-      row.set(
-        PARENT_IDENTITY_COLUMN,
-        [...parent.identity.parts] as StructuredValue,
-      );
+      row.set(PARENT_IDENTITY_COLUMN, [
+        ...parent.identity.parts,
+      ] as StructuredValue);
     }
 
     const arrays: {
@@ -206,10 +184,7 @@ export class DatabaseBuilder {
 
         if (Array.isArray(value)) {
           arrays.push({
-            tableName: [
-              tableName,
-              ...childPath,
-            ].join("__"),
+            tableName: [tableName, ...childPath].join("__"),
             sourcePath: [...childPath],
             values: value,
           });
@@ -217,22 +192,13 @@ export class DatabaseBuilder {
           continue;
         }
 
-        if (
-          value !== null &&
-          typeof value === "object"
-        ) {
-          visit(
-            value as Record<string, unknown>,
-            childPath,
-          );
+        if (value !== null && typeof value === "object") {
+          visit(value as Record<string, unknown>, childPath);
 
           continue;
         }
 
-        row.set(
-          childPath.join("__"),
-          value as ColumnInput,
-        );
+        row.set(childPath.join("__"), value as ColumnInput);
       }
     };
 
@@ -241,14 +207,10 @@ export class DatabaseBuilder {
     this.addRow(rowsByTable, tableName, row);
 
     for (const array of arrays) {
-      const childTable = this.schema.tables.get(
-        array.tableName,
-      );
+      const childTable = this.schema.tables.get(array.tableName);
 
       if (!childTable) {
-        throw new Error(
-          `No inferred table '${array.tableName}' exists.`,
-        );
+        throw new Error(`No inferred table '${array.tableName}' exists.`);
       }
 
       if (childTable.parentTableName !== tableName) {
@@ -292,15 +254,9 @@ export class DatabaseBuilder {
           array.tableName,
           new Map<string, ColumnInput>([
             ["value", element as ColumnInput],
-            [
-              IDENTITY_COLUMN,
-              [...childIdentity.parts] as StructuredValue,
-            ],
+            [IDENTITY_COLUMN, [...childIdentity.parts] as StructuredValue],
             [PARENT_NODE_TYPE_COLUMN, tableName],
-            [
-              PARENT_IDENTITY_COLUMN,
-              [...identity.parts] as StructuredValue,
-            ],
+            [PARENT_IDENTITY_COLUMN, [...identity.parts] as StructuredValue],
           ]),
         );
       });

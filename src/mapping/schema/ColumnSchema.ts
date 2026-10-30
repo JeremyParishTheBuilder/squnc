@@ -19,9 +19,7 @@ export class ColumnSchema {
     }
 
     if (!isPrimitiveValue(value)) {
-      throw new Error(
-        `Column '${this.name}' received a non-scalar value.`,
-      );
+      throw new Error(`Column '${this.name}' received a non-scalar value.`);
     }
 
     const observed = sqlTypeFromValue(value);
@@ -32,17 +30,13 @@ export class ColumnSchema {
     }
 
     if (!isSameType(this.type, observed)) {
-      throw new Error(
-        `Column '${this.name}' has inconsistent observed types.`,
-      );
+      throw new Error(`Column '${this.name}' has inconsistent observed types.`);
     }
   }
 
   requireType(): SqlType {
     if (this.type === undefined) {
-      throw new Error(
-        `Column '${this.name}' has no inferred type.`,
-      );
+      throw new Error(`Column '${this.name}' has no inferred type.`);
     }
 
     return this.type;

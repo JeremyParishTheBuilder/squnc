@@ -14,7 +14,7 @@ import { ImportMapping } from "../mapping/import/oldTypes/ImportMapping.js";
 //   isNull,
 //   isNotNull,
 // } from "../mapping/dsl/predicate/functions.js";
-import { ImportRoot } from "../mapping/import/oldTypes/ImportRoot.js";
+//import { ImportRoot } from "../mapping/import/oldTypes/ImportRoot.js";
 //import { discovery, path } from "../mapping/import/dsl.js";
 import { DiscoveryRoot } from "../mapping/discovery/DiscoveryRoot.js";
 import { SQL_DECIMAL } from "../types/SqlType.js";
@@ -134,17 +134,17 @@ const sql: PostgresInputBatch = engine.input() as PostgresInputBatch;
 // };
 
 export function exampleChainRegistry_buildDatabase(
-  testRegistryDiscoveryRoot: DiscoveryRoot,
-  testRegistryImportMapping: ImportMapping,
+  _testRegistryDiscoveryRoot: DiscoveryRoot,
+  _testRegistryImportMapping: ImportMapping,
 ) {
   console.log("Building Example Database");
 
-  const testRegistryImportRoot = new ImportRoot({
-    discovery: testRegistryDiscoveryRoot,
-    mapping: testRegistryImportMapping,
-  });
+  // const testRegistryImportRoot = new ImportRoot({
+  //   discovery: testRegistryDiscoveryRoot,
+  //   mapping: testRegistryImportMapping,
+  // });
 
-  const importRoots: ImportRoot[] = [testRegistryImportRoot];
+  //const importRoots: ImportRoot[] = [testRegistryImportRoot];
 
   // const result = ImportPipeline.build({
   //   importRoots: importRoots,

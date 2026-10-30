@@ -39,10 +39,6 @@ export class Engine {
     this.rules = RulesFacade(this.ruleResolver);
   }
 
-  public install(databases: Databases): void {
-    this.databases = databases;
-  }
-
   static create(dialect: Dialect): Engine {
     if (!(dialect in DIALECT_RULES)) {
       throw new Error(`Unsupported dialect: ${dialect}`);
@@ -226,20 +222,74 @@ export class Engine {
   commitTx(): void {
     const tx = this._currentTransaction;
     if (!tx) {
-      throw new Error("No active transaction to commit");
+      throw new Error("No active transaction");
     }
-
-    this.databases = tx.databases;
 
     if (this.rules.transaction.trackStatementHistory) {
       this.txHistory.set(tx.id, [...tx.stmts]);
     }
 
+    this.databases = tx.databases;
     this._currentTransaction = undefined;
   }
 
   rollbackTx(): void {
     this._currentTransaction = undefined;
+  }
+
+  withTransaction<T>(
+    operation: () => T,
+    databaseName?: string,
+    prepare?: () => void,
+  ): T {
+    const previousDatabaseName = this.currentDb;
+    let transactionStarted = false;
+
+    try {
+      this.beginTx();
+      transactionStarted = true;
+
+      prepare?.();
+
+      if (databaseName !== undefined) {
+        this.setCurrentDatabase(databaseName);
+      }
+
+      const result = operation();
+
+      this.commitTx();
+      transactionStarted = false;
+
+      return result;
+    } catch (error) {
+      if (transactionStarted) {
+        this.rollbackTx();
+      }
+
+      throw error;
+    } finally {
+      this.currentDb = previousDatabaseName;
+    }
+  }
+
+  get transactionDatabases(): Databases {
+    const tx = this.getTx();
+
+    if (!tx) {
+      throw new Error("No active transaction");
+    }
+
+    return tx.databases;
+  }
+
+  public install(databases: Databases): void {
+    const tx = this._currentTransaction;
+
+    if (tx) {
+      tx.databases = databases;
+    } else {
+      this.databases = databases;
+    }
   }
   //  </transaction>
 }

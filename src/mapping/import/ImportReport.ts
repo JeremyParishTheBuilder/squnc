@@ -5,17 +5,20 @@ export interface ImportReportSpec {
   readonly ruleset: ImportRuleset;
   readonly instructionResults: readonly ImportInstructionResult[];
   readonly committed: boolean;
+  readonly transactionError?: string;
 }
 
 export class ImportReport {
   readonly ruleset: ImportRuleset;
   readonly instructionResults: readonly ImportInstructionResult[];
   readonly committed: boolean;
+  readonly transactionError?: string;
 
   constructor(spec: ImportReportSpec) {
     this.ruleset = spec.ruleset;
     this.instructionResults = Object.freeze([...spec.instructionResults]);
     this.committed = spec.committed;
+    this.transactionError = spec.transactionError;
   }
 
   get passed(): boolean {
@@ -45,6 +48,7 @@ export class ImportReport {
       description: this.ruleset.description,
       passed: this.passed,
       committed: this.committed,
+      transactionError: this.transactionError,
       instructionResults: this.instructionResults.map((result) =>
         result.toJSON(),
       ),

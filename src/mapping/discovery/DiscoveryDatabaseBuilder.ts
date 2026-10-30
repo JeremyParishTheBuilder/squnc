@@ -22,56 +22,55 @@ export class DiscoveryDatabaseBuilder {
 
     const sql = engine.input();
 
-    sql.begin().execute();
+    return engine.withTransaction(
+      () => {
+        const columnList = discoveryColumns();
 
-    try {
-      sql.createDatabase(databaseName).execute();
-      sql.useDatabase(databaseName).execute();
+        const adaptedResultsByNodeType = new Map<
+          string,
+          InsertValuesInput[][]
+        >();
 
-      const columnList = discoveryColumns();
+        const nodeTypes = new Set([
+          ...discoveryResults.getNodeTypes(),
+          ...discoveryResults.getAll().map((result) => result.nodeType),
+        ]);
 
-      const adaptedResultsByNodeType = new Map<string, InsertValuesInput[][]>();
-
-      const nodeTypes = new Set([
-        ...discoveryResults.getNodeTypes(),
-        ...discoveryResults.getAll().map((result) => result.nodeType),
-      ]);
-
-      for (const nodeType of nodeTypes) {
-        sql.createTable(nodeType, columnList).execute();
-        adaptedResultsByNodeType.set(nodeType, []);
-      }
-
-      for (const result of spec.discoveryResults.getAll()) {
-        const adapted = adaptDiscoveryResult(result);
-
-        const row: InsertValuesInput[] = [
-          adapted.resultId,
-          adapted.parentResultId,
-          adapted.nodeType,
-          adapted.identity,
-          adapted.value,
-          adapted.metadata,
-          adapted.captures,
-        ];
-
-        adaptedResultsByNodeType.get(result.nodeType)!.push(row);
-      }
-
-      for (const [nodeType, results] of adaptedResultsByNodeType) {
-        if (results.length === 0) {
-          continue;
+        for (const nodeType of nodeTypes) {
+          sql.createTable(nodeType, columnList).execute();
+          adaptedResultsByNodeType.set(nodeType, []);
         }
 
-        sql.insertInto(nodeType).values(results).execute();
-      }
+        for (const result of discoveryResults.getAll()) {
+          const adapted = adaptDiscoveryResult(result);
 
-      sql.commit().execute();
+          const row: InsertValuesInput[] = [
+            adapted.resultId,
+            adapted.parentResultId,
+            adapted.nodeType,
+            adapted.identity,
+            adapted.value,
+            adapted.metadata,
+            adapted.captures,
+          ];
 
-      return databaseName;
-    } catch (error) {
-      sql.rollback().execute();
-      throw error;
-    }
+          adaptedResultsByNodeType.get(result.nodeType)!.push(row);
+        }
+
+        for (const [nodeType, results] of adaptedResultsByNodeType) {
+          if (results.length === 0) {
+            continue;
+          }
+
+          sql.insertInto(nodeType).values(results).execute();
+        }
+
+        return databaseName;
+      },
+      databaseName,
+      () => {
+        sql.createDatabase(databaseName).execute();
+      },
+    );
   }
 }

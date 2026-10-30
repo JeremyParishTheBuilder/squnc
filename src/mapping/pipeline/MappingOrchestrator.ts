@@ -57,7 +57,6 @@ export class MappingOrchestrator {
     });
   }
 
-  
   buildBusinessDatabase(
     engine: Engine,
     databaseName: string,
@@ -71,27 +70,24 @@ export class MappingOrchestrator {
 
     const schemaBuilder = new SchemaBuilder();
 
-    schemaBuilder.observeDiscoveryResults(
-      this._discoveryResults,
-      nodeType,
-    );
+    schemaBuilder.observeDiscoveryResults(this._discoveryResults, nodeType);
 
-    const updatedDatabases = new DatabaseBuilder(
-      databaseName,
-      schemaBuilder.schema,
-      this._discoveryResults,
-      nodeType,
-    ).build(engine.databases);
+    engine.withTransaction(() => {
+      const updatedDatabases = new DatabaseBuilder(
+        databaseName,
+        schemaBuilder.schema,
+        this._discoveryResults!,
+        nodeType,
+      ).build(engine.transactionDatabases);
 
-    // Install only after the complete build succeeds.
-    engine.install(updatedDatabases);
+      engine.install(updatedDatabases);
+    });
 
     // A new business database invalidates any previous import report.
     this._importReport = undefined;
 
     return databaseName;
   }
-
 
   import<TInputBatch extends PublicInputBatch>(
     spec: MappingImportSpec<TInputBatch>,

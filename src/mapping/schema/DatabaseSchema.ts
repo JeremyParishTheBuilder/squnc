@@ -22,12 +22,7 @@ export class DatabaseSchema {
     let table = this.tables.get(name);
 
     if (!table) {
-      table = new TableSchema(
-        name,
-        new Map(),
-        parentTableName,
-        sourcePath,
-      );
+      table = new TableSchema(name, new Map(), parentTableName, sourcePath);
 
       this.tables.set(name, table);
     }
