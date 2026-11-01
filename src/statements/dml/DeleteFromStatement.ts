@@ -22,17 +22,29 @@ export class DeleteFromBuilder implements StatementBuilder {
     this.returningCols = cols;
   }
 
-  getNextCalls() {
-    if (!this.whereClause)
-      return {
-        required: [],
-        optional: ["where", "returning"],
-      };
+  getNextCalls(): {
+    required: string[];
+    optional: string[];
+  } {
+    const required: string[] = [];
+    const optional: string[] = [];
 
-    return {
-      required: [],
-      optional: ["returning"],
+    const nextCalls = {
+      required,
+      optional,
     };
+
+    if (this.returningCols) {
+      return nextCalls;
+    }
+    optional.push("returning");
+
+    if (this.whereClause) {
+      return nextCalls;
+    }
+    optional.push("where");
+
+    return nextCalls;
   }
 
   createStatement(): DeleteFromStatement {

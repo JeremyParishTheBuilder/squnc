@@ -41,7 +41,6 @@ import type { TableReferenceNode } from "../ast/tabular/TableReferenceNode.js";
 import { RollbackBuilder } from "../statements/session/RollbackStatement.js";
 
 export abstract class InputBatch {
-  private statements: Statement[] = [];
   private currentBuilder: StatementBuilder | null = null;
 
   static statementStarters = [
@@ -56,7 +55,6 @@ export abstract class InputBatch {
     "select",
     "update",
     "deleteFrom",
-    "values",
   ];
 
   constructor(
@@ -69,57 +67,30 @@ export abstract class InputBatch {
   protected abstract createInputBatch(): this;
   protected abstract createInnerInputBatch(): this;
 
-  private addStatement(stmt: Statement) {
-    this.statements.push(stmt);
-  }
-
-  private finalizeStatement() {
+  private finalizeStatement(): Statement {
     if (!this.currentBuilder) {
-      return;
+      throw new Error(`No current statement builder selected`);
     }
 
-    this.addStatement(this.currentBuilder.createStatement());
+    const statement = this.currentBuilder.createStatement();
+
     this.currentBuilder = null;
-    return;
+
+    return statement;
   }
 
-  private getAllowedCalls(): {
-    allowed: string[];
-    required: string[];
-  } {
-    const allowed: string[] = [];
-    const required: string[] = [];
-
-    if (this.currentBuilder) {
-      const next = this.currentBuilder.getNextCalls();
-
-      allowed.push(...next.required, ...next.optional);
-      required.push(...next.required);
-
-      if (next.required.length > 0) {
-        return { allowed, required };
-      }
+  private getAllowedCalls(): string[] {
+    if (!this.currentBuilder) {
+      return InputBatch.statementStarters;
     }
 
-    return {
-      allowed,
-      required,
-    };
+    const next = this.currentBuilder.getNextCalls();
+
+    return [...next.required, ...next.optional];
   }
 
   private assertAllowed(canonical: string, fragment: string) {
-    if (!this.currentBuilder) {
-      if (!InputBatch.statementStarters.includes(canonical)) {
-        throw new Error(
-          `'${fragment}' cannot be used outside of a statement (or must start a statement)`,
-        );
-      }
-      return;
-    }
-
-    const { allowed } = this.getAllowedCalls();
-
-    if (!allowed.includes(canonical)) {
+    if (!this.getAllowedCalls().includes(canonical)) {
       throw new Error(`'${fragment}' is not valid here`);
     }
   }
@@ -128,33 +99,25 @@ export abstract class InputBatch {
 
   protected begin(fragment: string = "BEGIN") {
     this.assertAllowed("begin", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new BeginBuilder();
-    this.finalizeStatement();
     return this;
   }
 
   protected commit(fragment: string = "COMMIT") {
     this.assertAllowed("commit", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new CommitBuilder();
-    this.finalizeStatement();
     return this;
   }
 
   protected rollback(fragment: string = "ROLLBACK") {
     this.assertAllowed("rollback", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new RollbackBuilder();
-    this.finalizeStatement();
     return this;
   }
 
   protected useDatabase(dbName: string, fragment: string = "USE DATABASE") {
     this.assertAllowed("useDatabase", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new UseDatabaseBuilder(dbName);
-    this.finalizeStatement();
     return this;
   }
 
@@ -163,9 +126,7 @@ export abstract class InputBatch {
     fragment: string = "CREATE DATABASE",
   ) {
     this.assertAllowed("createDatabase", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new CreateDatabaseBuilder(dbName);
-    this.finalizeStatement();
     return this;
   }
 
@@ -176,7 +137,6 @@ export abstract class InputBatch {
     fragment: string = "CREATE TABLE",
   ) {
     this.assertAllowed("createTable", fragment);
-    this.finalizeStatement();
 
     this.currentBuilder = new CreateTableBuilder(
       name,
@@ -214,7 +174,6 @@ export abstract class InputBatch {
     columns: string[],
     fragment: string = "INSERT INTO",
   ) {
-    this.finalizeStatement();
     this.assertAllowed("insertInto", fragment);
 
     this.currentBuilder = new InsertIntoBuilder(table, columns);
@@ -227,8 +186,6 @@ export abstract class InputBatch {
 
     if (
       !(this.currentBuilder instanceof InsertIntoBuilder) // &&
-      //!(this.currentBuilder instanceof CreateTableBuilder)
-      // TODO - add to create table
     ) {
       throw new Error(`Cannot call '${fragment}' outside of InsertInto`);
     }
@@ -251,7 +208,6 @@ export abstract class InputBatch {
 
   protected update(table: string, fragment: string = "UPDATE") {
     this.assertAllowed("update", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new UpdateSetBuilder(table);
     return this;
   }
@@ -267,14 +223,12 @@ export abstract class InputBatch {
 
   protected deleteFrom(table: string, fragment: string = "DELETE FROM") {
     this.assertAllowed("deleteFrom", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new DeleteFromBuilder(table);
     return this;
   }
 
   protected alterTable(name: string, fragment: string = "ALTER TABLE") {
     this.assertAllowed("alterTable", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new AlterTableBuilder(name);
     return this;
   }
@@ -406,9 +360,9 @@ export abstract class InputBatch {
     fragment: string = "SELECT",
   ) {
     if (!isInputBatch(projectionOrQuery) && this.currentBuilder !== null) {
-      const newQueryInputCursor = this.createInnerInputBatch();
-      newQueryInputCursor.select(projectionOrQuery);
-      return newQueryInputCursor;
+      const inner = this.createInnerInputBatch();
+      inner.select(projectionOrQuery);
+      return inner;
     }
 
     this.assertAllowed("select", fragment);
@@ -511,26 +465,16 @@ export abstract class InputBatch {
     return GETDATE;
   }
 
-  private tryAsStatement(
-    assertNotInner: boolean = true,
-  ): Statement | undefined {
+  private tryAsStatement(assertNotInner: boolean = true): Statement {
     if (assertNotInner && this.isInner) {
       throw new Error(`Not allowed to finalize inner statement`);
     }
 
-    this.finalizeStatement();
-
-    return this.statements.pop();
+    return this.finalizeStatement();
   }
 
   public asStatement(): Statement {
-    const statement = this.tryAsStatement();
-
-    if (statement === undefined) {
-      throw new Error("No statement is available.");
-    }
-
-    return statement;
+    return this.tryAsStatement();
   }
 
   public asConstraintStatement(): ConstraintStatement {
@@ -556,23 +500,22 @@ export abstract class InputBatch {
   }
 
   execute(): QueryResult[] {
-    this.finalizeStatement();
+    const statement = this.finalizeStatement();
 
     const resultIterators: QueryResult[] = [];
 
-    const statementsToExecute = [...this.statements];
-    this.statements = [];
+    const result = this.executeStatement(statement);
 
-    for (const stmt of statementsToExecute) {
-      const result = this.executeStatement(stmt);
-
-      if (result !== undefined) {
-        resultIterators.push(result);
-      }
+    if (result !== undefined) {
+      resultIterators.push(result);
     }
 
     return resultIterators;
   }
+
+  // execute(): QueryResult | void {
+  //   return this.executeStatement(this.finalizeStatement());
+  // }
 }
 
 function isConstraintStatement(
