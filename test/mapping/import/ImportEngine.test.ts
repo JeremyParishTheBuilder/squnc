@@ -86,7 +86,7 @@ describe("ImportEngine::import", () => {
       .from("Chains")
       .execute();
       
-    expect(result[0].rows.map((row) => row.values))
+    expect(result!.rows.map((row) => row.values))
       .toEqual([["chainDirectory"]]);
   });
 
@@ -316,9 +316,9 @@ describe("ImportEngine::import", () => {
 
     const result = sql.select("*").from("Chains").execute();
 
-    console.log(result[0].rows);
+    console.log(result!.rows);
 
-    expect(result[0]).toBeDefined();
-    expect(result[0].rows).toHaveLength(0);
+    expect(result!).toBeDefined();
+    expect(result!.rows).toHaveLength(0);
   });
 });

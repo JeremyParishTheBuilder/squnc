@@ -175,7 +175,7 @@ export function exampleChainRegistry_buildDatabase(
   //   }
   // }
 
-  const chainResult = sql.select("*").from("Chains").execute()[0];
+  const chainResult = sql.select("*").from("Chains").execute();
   console.log("chainResult");
   console.log(chainResult);
 
@@ -183,15 +183,15 @@ export function exampleChainRegistry_buildDatabase(
   // console.log("logoURIsResult");
   // console.log(logoURIsResult);
 
-  const imagesResult = sql.select("*").from("Images").execute()[0];
+  const imagesResult = sql.select("*").from("Images").execute();
   console.log("imagesResult");
   console.log(imagesResult);
 
-  const feeTokens = sql.select("*").from("FeeTokens").execute()[0];
+  const feeTokens = sql.select("*").from("FeeTokens").execute();
   console.log("feeTokens");
   console.log(feeTokens);
 
-  const assets = sql.select("*").from("Assets").execute()[0];
+  const assets = sql.select("*").from("Assets").execute();
   console.log("assets");
   console.log(assets);
 
@@ -236,13 +236,13 @@ function createTestDatabase() {
     .execute();
   console.log("5");
   const results = sql.select("*").from("T1").execute();
-  console.log(results[0].rows[0]);
+  console.log(results!.rows[0]);
   sql
     .insertInto("T1")
     .values([[1], [sql.DEFAULT]])
     .execute();
   console.log("6");
   const rows2 = sql.select("*").from("T1").execute();
-  console.log(rows2[0]);
+  console.log(rows2);
   console.log("7");
 }

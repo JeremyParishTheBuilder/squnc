@@ -39,7 +39,7 @@ describe("Integration::cast", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1, "123"],
@@ -83,7 +83,7 @@ describe("Integration::cast", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [123, "123"],
@@ -132,7 +132,7 @@ describe("Integration::cast", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [123, "matched"],

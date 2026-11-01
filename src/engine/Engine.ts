@@ -177,8 +177,8 @@ export class Engine {
     }
   }
 
-  execute(): QueryResult[] {
-    if (!this.inputBatch) return [];
+  execute(): QueryResult | void {
+    if (!this.inputBatch) return;
 
     const results = this.inputBatch.execute();
     this.inputBatch = undefined;

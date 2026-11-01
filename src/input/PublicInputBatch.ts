@@ -20,5 +20,5 @@ export interface PublicInputBatch {
     columns?: string[],
   ): PublicInputBatch;
   values(data: InsertValuesInput[][]): PublicInputBatch;
-  execute(): QueryResult[];
+  execute(): QueryResult | void;
 }

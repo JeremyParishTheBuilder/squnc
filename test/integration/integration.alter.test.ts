@@ -33,6 +33,6 @@ describe("Integration::alter", () => {
 
     const result = sql.select("*").from("Users").execute();
 
-    expect(result[0].rows).toEqual([]);
+    expect(result!.rows).toEqual([]);
   });
 });

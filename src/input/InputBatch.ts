@@ -499,23 +499,19 @@ export abstract class InputBatch {
     return statement;
   }
 
-  execute(): QueryResult[] {
-    const statement = this.finalizeStatement();
-
-    const resultIterators: QueryResult[] = [];
-
-    const result = this.executeStatement(statement);
-
-    if (result !== undefined) {
-      resultIterators.push(result);
-    }
-
-    return resultIterators;
+  execute(): QueryResult | void {
+    return this.executeStatement(this.finalizeStatement());
   }
 
-  // execute(): QueryResult | void {
-  //   return this.executeStatement(this.finalizeStatement());
-  // }
+  fetch(): QueryResult {
+    const result = this.executeStatement(this.finalizeStatement());
+
+    if (!result) {
+      throw new Error("Expected statement to produce a query result");
+    }
+
+    return result;
+  }
 }
 
 function isConstraintStatement(

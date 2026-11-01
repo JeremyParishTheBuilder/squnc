@@ -42,7 +42,7 @@ describe("Integration::delete", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         "index": 1,
         "values": [2, "Bob"],
@@ -78,7 +78,7 @@ describe("Integration::delete", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([]);
+    expect(results!.rows).toEqual([]);
   });
 
   it("deletes multiple rows matching a predicate", () => {
@@ -112,7 +112,7 @@ describe("Integration::delete", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1],
@@ -233,7 +233,7 @@ describe("Integration::delete", () => {
       .from("Users")
       .execute();
 
-    expect(roles[0].rows).toEqual([]);
-    expect(users[0].rows).toEqual([]);
+    expect(roles!.rows).toEqual([]);
+    expect(users!.rows).toEqual([]);
   });
 });

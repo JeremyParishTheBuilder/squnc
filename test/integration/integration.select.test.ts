@@ -44,7 +44,7 @@ describe('Integration::select', () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1, "Alice"],
@@ -87,7 +87,7 @@ describe('Integration::select', () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: ["Alice"],
@@ -130,7 +130,7 @@ describe('Integration::select', () => {
       )
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 1,
         values: [20],
@@ -180,7 +180,7 @@ describe('Integration::select', () => {
       )
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 1,
         values: [20, 100],
@@ -226,7 +226,7 @@ describe('Integration::select', () => {
       )
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 1,
         values: [20, 100],
@@ -268,7 +268,7 @@ describe('Integration::select', () => {
       )
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [10],
@@ -306,7 +306,7 @@ describe('Integration::select', () => {
       .from("users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1],
@@ -436,7 +436,7 @@ describe('Integration::select', () => {
       )
       .execute();
 
-    expect(result[0].rows).toEqual([
+    expect(result!.rows).toEqual([
       {
         index: 0,
         values: [1, "Alice", 10, 1],
@@ -485,7 +485,7 @@ describe('Integration::select', () => {
       .on(col("u.Id").eq(col("o.UserId")))
       .execute();
 
-    expect(result[0].rows).toEqual([
+    expect(result!.rows).toEqual([
       { index: 0, values: ["Alice", 10] },
     ]);
   });
@@ -525,7 +525,7 @@ describe('Integration::select', () => {
       .on(col("u.Id").eq(col("o.UserId")))
       .execute();
 
-    expect(result[0].rows).toEqual([
+    expect(result!.rows).toEqual([
       { index: 0, values: [1, "Alice", 10, 1] },
     ]);
   });
@@ -571,7 +571,7 @@ describe('Integration::select', () => {
       .on(col("u.Id").eq(col("o.UserId")))
       .execute();
 
-    expect(result[0].rows).toEqual([
+    expect(result!.rows).toEqual([
       { index: 0, values: ["Alice", 10] },
       { index: 1, values: ["Bob", 20] },
     ]);
@@ -639,7 +639,7 @@ describe('Integration::select', () => {
       .on(col("o.Id").eq(col("i.OrderId")))
       .execute();
 
-    expect(result[0].rows).toEqual([
+    expect(result!.rows).toEqual([
       { index: 0, values: ["Alice", 10, 100] },
       { index: 1, values: ["Bob", 20, 200] },
     ]);
@@ -763,7 +763,7 @@ describe('Integration::select', () => {
         )
         .execute();
 
-      expect(result[0].columns).toEqual([
+      expect(result!.columns).toEqual([
         {
           name: "a",
           type: SQL_INTEGER,
@@ -776,7 +776,7 @@ describe('Integration::select', () => {
         },
       ]);
 
-      expect(result[0].rows).toEqual([
+      expect(result!.rows).toEqual([
         {
           index: 0,
           values: [1, 25],
@@ -979,8 +979,8 @@ describe('Integration::select', () => {
         .from("DB2.T1")
         .execute();
 
-      expect(result).toHaveLength(1);
-      expect(result[0].rows.map((row) => row.values)).toEqual([[42]]);
+      expect(result).toBeDefined();
+      expect(result!.rows.map((row) => row.values)).toEqual([[42]]);
     });
   });
 });

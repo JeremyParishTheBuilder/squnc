@@ -70,7 +70,7 @@ describe('Integration::query', () => {
         )
         .execute();
 
-      expect(results[0].rows).toEqual([
+      expect(results!.rows).toEqual([
         {
           index: 0,
           values: [1, "Alice"],
@@ -133,7 +133,7 @@ describe('Integration::query', () => {
         )
         .execute();
 
-      expect(results[0].rows).toEqual([
+      expect(results!.rows).toEqual([
         { index: 0, values: [1, "Alice"] },
         { index: 1, values: [2, "Bob"] },
         { index: 0, values: [1, "Alice"] },
@@ -189,7 +189,7 @@ describe('Integration::query', () => {
         )
         .execute();
 
-      expect(results[0].rows).toEqual([
+      expect(results!.rows).toEqual([
         { index: 0, values: [1] },
         { index: 0, values: [2] },
       ]);
@@ -256,7 +256,7 @@ describe('Integration::query', () => {
         )
         .execute();
 
-      expect(results[0].rows).toEqual([
+      expect(results!.rows).toEqual([
         { index: 0, values: [1] },
         { index: 0, values: [2] },
         { index: 0, values: [4] },
@@ -311,7 +311,7 @@ describe('Integration::query', () => {
         )
         .execute();
 
-      expect(results[0].rows).toEqual([
+      expect(results!.rows).toEqual([
         { index: 0, values: [1] },
         { index: 0, values: [2.5] },
       ]);
@@ -365,7 +365,7 @@ describe('Integration::query', () => {
         )
         .execute();
 
-      expect(results[0].rows).toEqual([
+      expect(results!.rows).toEqual([
         { index: 0, values: [1] },
         { index: 0, values: [null] },
       ]);
@@ -473,7 +473,7 @@ describe('Integration::query', () => {
         )
         .execute();
 
-      expect(results[0].rows).toEqual([
+      expect(results!.rows).toEqual([
         { index: 0, values: [1] },
         { index: 1, values: [2] },
       ]);
@@ -511,7 +511,7 @@ describe('Integration::query', () => {
         )
         .execute();
 
-      expect(results[0].rows).toEqual([
+      expect(results!.rows).toEqual([
         { index: 0, values: [1] },
         { index: 1, values: [2] },
       ]);
@@ -547,7 +547,7 @@ describe('Integration::query', () => {
         )
         .execute();
 
-      expect(results[0].rows).toEqual([]);
+      expect(results!.rows).toEqual([]);
     });
   });
 
@@ -583,12 +583,12 @@ describe('Integration::query', () => {
 
       sql.commit().execute();
 
-      const [result] = sql
+      const result = sql
         .select([col("Id"), col("Name")])
         .from("Users")
         .execute();
 
-      expect(result.columns).toEqual([
+      expect(result!.columns).toEqual([
         {
           name: "Id",
           type: SQL_DECIMAL,
@@ -601,7 +601,7 @@ describe('Integration::query', () => {
         },
       ]);
 
-      expect(result.rows).toEqual([
+      expect(result!.rows).toEqual([
         {
           index: 0,
           values: [1, "Alice"],
@@ -659,7 +659,7 @@ describe('Integration::query', () => {
 
       sql.commit().execute();
 
-      const [result] = sql
+      const result = sql
         .select([col("Id"), col("Name")])
         .from("UsersA")
         .unionAll(
@@ -669,7 +669,7 @@ describe('Integration::query', () => {
         )
         .execute();
 
-      expect(result.columns).toEqual([
+      expect(result!.columns).toEqual([
         {
           name: "Id",
           type: SQL_DECIMAL,
@@ -682,7 +682,7 @@ describe('Integration::query', () => {
         },
       ]);
 
-      expect(result.rows).toEqual([
+      expect(result!.rows).toEqual([
         {
           index: 0,
           values: [1, "Alice"],
@@ -729,9 +729,9 @@ describe('Integration::query', () => {
         .from("discovery.chainDirectory")
         .execute();
 
-      expect(result).toHaveLength(1);
-      expect(result[0].rows).toHaveLength(1);
-      expect(result[0].rows[0].values).toEqual([
+      expect(result).toBeDefined();
+      expect(result!.rows).toHaveLength(1);
+      expect(result!.rows[0].values).toEqual([
         2,
         1,
         "chainDirectory",
@@ -741,7 +741,7 @@ describe('Integration::query', () => {
         {},
       ]);
 
-      expect(result[0].columns).toEqual([
+      expect(result!.columns).toEqual([
         { name: "resultId", type: SQL_INTEGER, nullable: false },
         { name: "parentResultId", type: SQL_INTEGER, nullable: true },
         { name: "nodeType", type: SQL_VARCHAR, nullable: false },
@@ -796,12 +796,12 @@ describe('Integration::query', () => {
     it("extracts a scalar with JSON_VALUE", () => {
       const sql = setupJsonTable();
 
-      const [result] = sql
+      const result = sql
         .select([json_value(col("Document"), "$.chain_name")])
         .from("Documents")
         .execute();
 
-      expect(result.rows.map((row) => row.values)).toEqual([
+      expect(result!.rows.map((row) => row.values)).toEqual([
         ["osmosis"],
       ]);
     });
@@ -809,12 +809,12 @@ describe('Integration::query', () => {
     it("extracts a nested scalar with JSON_VALUE", () => {
       const sql = setupJsonTable();
 
-      const [result] = sql
+      const result = sql
         .select([json_value(col("Document"), "$.codebase.version")])
         .from("Documents")
         .execute();
 
-      expect(result.rows.map((row) => row.values)).toEqual([
+      expect(result!.rows.map((row) => row.values)).toEqual([
         ["12"],
       ]);
     });
@@ -822,7 +822,7 @@ describe('Integration::query', () => {
     it("casts a JSON_VALUE result to a numeric type", () => {
       const sql = setupJsonTable();
 
-      const [result] = sql
+      const result = sql
         .select([
           cast(json_value(col("Document"), "$.codebase.version"))
           .as(SQL_DECIMAL),
@@ -830,7 +830,7 @@ describe('Integration::query', () => {
         .from("Documents")
         .execute();
 
-      expect(result.rows.map((row) => row.values)).toEqual([
+      expect(result!.rows.map((row) => row.values)).toEqual([
         [12],
       ]);
     });
@@ -838,12 +838,12 @@ describe('Integration::query', () => {
     it("extracts a nested object with JSON_QUERY", () => {
       const sql = setupJsonTable();
 
-      const [result] = sql
+      const result = sql
         .select([json_query(col("Document"), "$.metadata")])
         .from("Documents")
         .execute();
 
-      expect(result.rows.map((row) => row.values)).toEqual([
+      expect(result!.rows.map((row) => row.values)).toEqual([
         [{ network: "mainnet", active: true }],
       ]);
     });
@@ -851,12 +851,12 @@ describe('Integration::query', () => {
     it("extracts an array with JSON_QUERY", () => {
       const sql = setupJsonTable();
 
-      const [result] = sql
+      const result = sql
         .select([json_query(col("Document"), "$.versions")])
         .from("Documents")
         .execute();
 
-      expect(result.rows.map((row) => row.values)).toEqual([
+      expect(result!.rows.map((row) => row.values)).toEqual([
         [[1, 2, 3]],
       ]);
     });

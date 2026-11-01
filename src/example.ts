@@ -24,16 +24,16 @@ export const exampleChainRegistry_Mapping = () => {
 
   console.log("chains:");
   const chainsQueryResult = sql.select("*").from("Chains").execute();
-  console.log(chainsQueryResult[0].columns);
-  console.log(chainsQueryResult[0].rows);
+  console.log(chainsQueryResult!.columns);
+  console.log(chainsQueryResult!.rows);
 
   console.log("key algos:");
   const chainFile__key_algos = sql
     .select("*")
     .from("chainFile__key_algos")
     .execute();
-  console.log(chainFile__key_algos[0].columns);
-  console.log(chainFile__key_algos[0].rows);
+  console.log(chainFile__key_algos!.columns);
+  console.log(chainFile__key_algos!.rows);
 
   // console.log("inspecting discovery payloads:");
   // console.log("Query:");

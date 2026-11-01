@@ -29,7 +29,7 @@ describe("Integration::InputBatch", () => {
 
       const result = sql.select("*").from("Users").execute();
 
-      expect(result[0].rows.map((row) => row.values)).toEqual([[42]]);
+      expect(result!.rows.map((row) => row.values)).toEqual([[42]]);
     });
 
     it("rejects starting another statement while one is pending", () => {
@@ -121,7 +121,7 @@ describe("Integration::InputBatch", () => {
 
       const result = sql.select("*").from("UsersCopy").execute();
 
-      expect(result[0].rows.map((row) => row.values)).toEqual([[1], [2]]);
+      expect(result!.rows.map((row) => row.values)).toEqual([[1], [2]]);
     });
 
     it("uses a nested SELECT as a CTAS source", () => {
@@ -150,7 +150,7 @@ describe("Integration::InputBatch", () => {
 
       const result = sql.select("*").from("UsersCopy").execute();
 
-      expect(result[0].rows.map((row) => row.values)).toEqual([[1], [2]]);
+      expect(result!.rows.map((row) => row.values)).toEqual([[1], [2]]);
     });
   });
 });

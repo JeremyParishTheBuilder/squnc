@@ -48,7 +48,7 @@ describe("MappingOrchestrator", () => {
       .from("Chains")
       .execute();
 
-    const chainNames = result[0].rows
+    const chainNames = result!.rows
       .map((row) => row.values[0] as string)
       .sort();
 
@@ -218,7 +218,7 @@ describe("MappingOrchestrator", () => {
       .from("chainFile")
       .execute();
 
-    const chainNames = queryResult[0].rows
+    const chainNames = queryResult!.rows
       .map((row) => row.values[0] as string);
 
     expect(chainNames).toContain("cosmoshub");
