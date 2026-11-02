@@ -184,13 +184,22 @@ export abstract class InputBatch {
   protected values(data: InsertValuesInput[][], fragment: string = "VALUES") {
     this.assertAllowed("values", fragment);
 
-    if (
-      !(this.currentBuilder instanceof InsertIntoBuilder) // &&
-    ) {
+    if (!(this.currentBuilder instanceof InsertIntoBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of InsertInto`);
     }
 
     this.currentBuilder.values(data);
+    return this;
+  }
+
+  protected defaultValues(fragment: string = "DEFAULT VALUES") {
+    this.assertAllowed("defaultValues", fragment);
+
+    if (!(this.currentBuilder instanceof InsertIntoBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of InsertInto`);
+    }
+
+    this.currentBuilder.defaultValues();
     return this;
   }
 

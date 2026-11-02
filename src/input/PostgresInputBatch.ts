@@ -115,6 +115,10 @@ export class PostgresInputBatch extends InputBatch implements PublicInputBatch {
     return super.values(data);
   }
 
+  defaultValues() {
+    return super.defaultValues();
+  }
+
   update(table: string) {
     return super.update(table);
   }

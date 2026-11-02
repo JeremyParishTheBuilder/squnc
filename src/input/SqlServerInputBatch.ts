@@ -101,6 +101,10 @@ export class SqlServerInputBatch
     return super.values(data);
   }
 
+  defaultValues() {
+    return super.defaultValues();
+  }
+
   update(table: string) {
     return super.update(table);
   }

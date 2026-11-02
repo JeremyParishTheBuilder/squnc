@@ -942,4 +942,94 @@ describe("Integration::insertSelect", () => {
     expect(results!.rows.map((row) => row.values))
       .toEqual([[1], [2]]);
   });
+
+  it("inserts a row using DEFAULT VALUES", () => {
+    const sql = createTestPostgresSql();
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
+    sql.createTable(...createTableTestSpec("Users", {
+      Id: {
+        type: SQL_DECIMAL,
+        nullable: false,
+        primaryKey: true,
+        defaultValue: 1,
+      },
+      Name: {
+        type: SQL_VARCHAR,
+        nullable: false,
+        defaultValue: "Anonymous",
+      },
+    })).execute();
+
+    sql.insertInto(table("Users")).defaultValues().execute();
+
+    const result = sql
+      .select("*")
+      .from("Users")
+      .fetch();
+
+    expect(result.rows).toEqual([
+      {
+        index: 0,
+        values: [1, "Anonymous"],
+      },
+    ]);
+  });
+
+  it("uses NULL for nullable columns without an explicit default in DEFAULT VALUES", () => {
+    const sql = createTestPostgresSql();
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
+    sql.createTable(...createTableTestSpec("Users", {
+      Id: {
+        type: SQL_DECIMAL,
+        nullable: false,
+        primaryKey: true,
+        defaultValue: 1,
+      },
+      Name: {
+        type: SQL_VARCHAR,
+        nullable: true,
+      },
+    })).execute();
+
+    sql.insertInto("Users").defaultValues().execute();
+
+    const result = sql.select("*").from("Users").fetch();
+
+    expect(result.rows).toEqual([
+      {
+        index: 0,
+        values: [1, null],
+      },
+    ]);
+  });
+
+  it("rejects DEFAULT VALUES when a non-nullable column has no default", () => {
+    const sql = createTestPostgresSql();
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
+    sql.createTable(...createTableTestSpec("Users", {
+      Id: {
+        type: SQL_DECIMAL,
+        nullable: false,
+        primaryKey: true,
+        defaultValue: 1,
+      },
+      Name: {
+        type: SQL_VARCHAR,
+        nullable: false,
+      },
+    })).execute();
+
+    expect(() => {
+      sql.insertInto("Users").defaultValues().execute();
+    }).toThrow();
+  });
 });
