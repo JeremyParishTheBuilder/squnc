@@ -111,6 +111,64 @@ export class NamedObjectStore<
     } as Partial<this>);
   }
 
+  public updateMany(objects: T[]): NamedObjectStore<T, ID> {
+    if (objects.length === 0) {
+      return this;
+    }
+
+    const updatesById = new Map<ID, T>();
+    const destinationNames = new Set<string>();
+
+    // Validate IDs and destination names.
+    for (const obj of objects) {
+      if (!this.byId.has(obj.id)) {
+        throw new Error(`Cannot update missing id "${obj.id}"`);
+      }
+
+      if (updatesById.has(obj.id)) {
+        throw new Error(`Duplicate update for id "${obj.id}"`);
+      }
+
+      updatesById.set(obj.id, obj);
+
+      const normalizedName = normalizeIdentifier(obj.name);
+
+      if (destinationNames.has(normalizedName)) {
+        throw new Error(`Name already exists: "${obj.name}"`);
+      }
+
+      destinationNames.add(normalizedName);
+    }
+
+    // Validate collisions against objects outside the update set.
+    for (const obj of objects) {
+      const normalizedName = normalizeIdentifier(obj.name);
+
+      if (this.byName.has(normalizedName)) {
+        const existingId = this.byName.require(normalizedName);
+
+        if (!updatesById.has(existingId)) {
+          throw new Error(`Name already exists: "${obj.name}"`);
+        }
+      }
+    }
+
+    // Apply all updates to a local immutable collection.
+    let updatedById = this.byId;
+
+    for (const obj of objects) {
+      const existing = this.byId.require(obj.id);
+
+      if (obj !== existing) {
+        updatedById = updatedById.update(obj.id, obj);
+      }
+    }
+
+    return this.with({
+      byId: updatedById,
+    } as Partial<this>);
+  }
+
   public remove(id: ID): NamedObjectStore<T, ID> {
     const obj = this.byId.get(id);
     if (!obj) return this;

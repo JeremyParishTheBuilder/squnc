@@ -34,6 +34,10 @@ export const MYSQL_RULES: DialectRules = {
     ctasAllowsConstraints: true,
   },
 
+  dml: {
+    maxColumnRenames: null,
+  },
+
   dql: {
     denyDuplicateDerivedTableColumnNames: true,
   },

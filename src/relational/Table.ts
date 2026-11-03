@@ -38,6 +38,8 @@ import type { OrderedInputRow } from "../types/OrderedInputRow.js";
 import type { SqlType } from "../types/SqlType.js";
 import { RelationScope } from "../semantic/relation/RelationScope.js";
 import { relationBindingFromTable } from "../semantic/relation/RelationBinding.js";
+import type { ResolvedColumnRename } from "../actions/RenameColumnsAction.js";
+import type { ColumnRename } from "../statements/index.js";
 
 export type TableId = number & { readonly __brand: "TableId" };
 
@@ -207,27 +209,78 @@ export class Table extends Immutable {
     } as Partial<this>);
   }
 
-  public renameColumn(name: string, newName: string): Table {
-    return this.renameColumnById(this.columns.requireIdByName(name), newName);
+  public renameColumns(columnRenames: ColumnRename[]): Table {
+    const resolvedRenames = columnRenames.map((rename) => ({
+      columnId: this.columns.requireByName(rename.from).id,
+      newName: rename.to,
+    }));
+
+    return this.renameColumnsById(resolvedRenames);
   }
 
-  public renameColumnById(id: ColumnId, newName: string): Table {
-    const column = this.columns.require(id);
-
-    const oldName = column.name;
-
-    if (oldName === newName) return this;
-
-    const normalizedOldName = normalizeIdentifier(oldName);
-    const normalizedNewName = normalizeIdentifier(newName);
-
-    if (normalizedOldName !== normalizedNewName) {
-      this.columns.assertNameUnused(newName);
+  public renameColumnsById(columnRenames: ResolvedColumnRename[]): Table {
+    if (columnRenames.length === 0) {
+      return this;
     }
 
-    const renamedColumn = column.rename(newName);
+    const columnsToRename = new Map<ColumnId, Column>();
+    const destinationNames = new Set<string>();
 
-    const updatedColumns = this.columns.update(renamedColumn);
+    // Resolve columns and reject duplicate sources.
+    const resolvedRenames = columnRenames.map((rename) => {
+      const column = this.columns.require(rename.columnId);
+
+      if (columnsToRename.has(column.id)) {
+        throw new Error(`Duplicate column rename for "${column.name}"`);
+      }
+
+      columnsToRename.set(column.id, column);
+
+      return {
+        column,
+        newName: rename.newName,
+        normalizedNewName: normalizeIdentifier(rename.newName),
+      };
+    });
+
+    // Reject duplicate destination names.
+    for (const rename of resolvedRenames) {
+      if (destinationNames.has(rename.normalizedNewName)) {
+        throw new Error(
+          `Duplicate destination column name "${rename.newName}"`,
+        );
+      }
+
+      destinationNames.add(rename.normalizedNewName);
+    }
+
+    // Reject collisions with columns that are not being renamed.
+    for (const rename of resolvedRenames) {
+      const existingColumn = this.columns.getByName(rename.newName);
+
+      if (
+        existingColumn !== undefined &&
+        !columnsToRename.has(existingColumn.id)
+      ) {
+        throw new Error(`Column name "${rename.newName}" is already taken`);
+      }
+    }
+
+    // Ignore no-op renames.
+    const changedRenames = resolvedRenames.filter(
+      (rename) => rename.column.name !== rename.newName,
+    );
+
+    if (changedRenames.length === 0) {
+      return this;
+    }
+
+    const renamedColumns = changedRenames.map((rename) =>
+      rename.column.rename(rename.newName),
+    );
+
+    // This must update the collection atomically.
+    const updatedColumns = this.columns.updateMany(renamedColumns);
 
     return this.with({
       columns: updatedColumns,

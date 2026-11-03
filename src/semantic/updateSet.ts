@@ -28,11 +28,20 @@ export function bindUpdateSet(
   const scope = new RelationScope([relationBindingFromTable(table)]);
 
   const updateMap = new Map<ColumnId, UpdateAssignment>();
+  const columnsSeen = new Set<ColumnId>();
 
   for (const columnName in stmt.values) {
-    const value = stmt.values[columnName];
-
     const column = table.columns.requireByName(columnName);
+
+    if (columnsSeen.has(column.id)) {
+      throw new Error(
+        `Duplicate column assignment for "${column.name}" in UPDATE statement`,
+      );
+    }
+
+    columnsSeen.add(column.id);
+
+    const value = stmt.values[columnName];
 
     validateInputNode(value, ctx);
 

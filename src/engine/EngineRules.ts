@@ -42,6 +42,14 @@ export const ENGINE_RULES: Record<
     },
   },
 
+  dml: {
+    maxColumnRenames: {
+      dialectStrict: (d: Dialect): number | null =>
+        DIALECT_RULES[d].dml.maxColumnRenames,
+      engineDefault: 1,
+    },
+  },
+
   dql: {
     denyDuplicateDerivedTableColumnNames: {
       dialectStrict: (d: Dialect) =>

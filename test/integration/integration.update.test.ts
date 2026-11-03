@@ -737,4 +737,36 @@ describe("Integration::update", () => {
     expect(typeof value).toBe("string");
     expect(Number.isNaN(Date.parse(value as string))).toBe(false);
   });
+
+  it("rejects duplicate column assignments", () => {
+    const sql = createTestPostgresSql();
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
+    sql.createTable(...createTableTestSpec("Users", {
+      Id: {
+        type: SQL_DECIMAL,
+        nullable: false,
+        primaryKey: true,
+      },
+      Name: {
+        type: SQL_VARCHAR,
+        nullable: false,
+      },
+    })).execute();
+
+    sql.insertInto("Users", ["Id", "Name"])
+      .values([[1, "Alice"]])
+      .execute();
+
+    expect(() => {
+      sql.update("Users")
+        .set({
+          Name: "Bob",
+          name: "Charlie",
+        })
+        .execute();
+    }).toThrow();
+  });
 });

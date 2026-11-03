@@ -1,12 +1,17 @@
 import { type Action } from "./Action.js";
 import { type Databases } from "../relational/Databases.js";
+import type { ColumnId } from "../relational/Column.js";
 
-export class RenameColumnAction implements Action {
+export interface ResolvedColumnRename {
+  columnId: ColumnId;
+  newName: string;
+}
+
+export class RenameColumnsAction implements Action {
   constructor(
     private dbName: string,
     private tableName: string,
-    private oldColumnName: string,
-    private newColumnName: string,
+    private columnRenames: ResolvedColumnRename[],
   ) {}
 
   apply(databases: Databases): Databases {
@@ -14,7 +19,7 @@ export class RenameColumnAction implements Action {
 
     const updatedTable = db.tables
       .requireByName(this.tableName)
-      .renameColumn(this.oldColumnName, this.newColumnName);
+      .renameColumnsById(this.columnRenames);
 
     const updatedDb = db.updateTable(updatedTable);
 

@@ -9,6 +9,7 @@ import type { QueryProjection } from "../ast/query/QueryProjection.js";
 import type { TabularExpressionInput } from "../statements/dql/TabularExpressionReferencer.js";
 import type { TableReferenceNode } from "../ast/tabular/TableReferenceNode.js";
 import type { PublicInputBatch } from "./PublicInputBatch.js";
+import type { ColumnRename } from "../statements/index.js";
 
 export class SqlServerInputBatch
   extends InputBatch
@@ -73,8 +74,8 @@ export class SqlServerInputBatch
     return super.dropColumn(columnNames);
   }
 
-  renameColumn(from: string, to: string) {
-    return super.renameColumn(from, to);
+  renameColumn(columnRenames: ColumnRename[]) {
+    return super.renameColumn(columnRenames);
   }
 
   modify(columnList: InlineColumnSpec[]) {

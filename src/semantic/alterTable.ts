@@ -17,11 +17,12 @@ import { DropCheckAction } from "../actions/DropCheckAction.js";
 import { DropIndexAction } from "../actions/DropIndexAction.js";
 import { AddIndexAction } from "../actions/AddIndexAction.js";
 import { DropUniqueAction } from "../actions/DropUniqueAction.js";
-import { type Column } from "../relational/Column.js";
+import { type Column, type ColumnId } from "../relational/Column.js";
 import { AddUniqueConstraintAction } from "../actions/AddUniqueConstraintAction.js";
-import { RenameColumnAction } from "../actions/RenameColumnAction.js";
 import { DropColumnAction } from "../actions/DropColumnAction.js";
 import { AlterColumnAction } from "../actions/AlterColumnAction.js";
+import { normalizeIdentifier } from "../utils/normalizeIdentifier.js";
+import { RenameColumnsAction } from "../actions/RenameColumnsAction.js";
 
 export function bindAlterTable(
   semantic: SemanticAnalyzer,
@@ -151,7 +152,23 @@ export function bindAlterTable(
   } else if (stmt.op === "drop_primary_key") {
     stmtActions.push(new DropPrimaryKeyAction(dbName, tableName));
   } else if (stmt.op === "add_column") {
+    const columnNamesSeen = new Set<string>();
+
     for (const columnSpec of stmt.columnList) {
+      const normalizedName = normalizeIdentifier(columnSpec.name);
+
+      if (columnNamesSeen.has(normalizedName)) {
+        throw new Error(
+          `Duplicate column name "${columnSpec.name}" in ALTER TABLE statement`,
+        );
+      }
+
+      columnNamesSeen.add(normalizedName);
+
+      if (table.columns.getByName(columnSpec.name)) {
+        throw new Error(`Column "${columnSpec.name}" already exists`);
+      }
+
       stmtActions.push(
         new AddColumnAction(
           dbName,
@@ -162,27 +179,114 @@ export function bindAlterTable(
       );
     }
   } else if (stmt.op === "rename_column") {
-    table.columns.requireByName(stmt.from);
+    const maxColumnRenames = ctx.rules.dml.maxColumnRenames;
+    if (
+      maxColumnRenames !== null &&
+      stmt.columnRenames.length > maxColumnRenames
+    ) {
+      throw new Error(
+        `Too many column renames: maximum is ${maxColumnRenames}`,
+      );
+    }
 
-    assertNewNameAvailable(stmt.to);
-    function assertNewNameAvailable(newName: string): void {
-      if (table.columns.getByName(newName) !== undefined) {
-        throw new Error(`Replacement column name ${newName} already taken`);
+    const sourceColumns = new Map<ColumnId, Column>();
+    const destinationNames = new Set<string>();
+
+    // Phase 1: Resolve sources and reject duplicate sources.
+    const resolvedRenames = stmt.columnRenames.map((rename) => {
+      const column = table.columns.requireByName(rename.from);
+
+      if (sourceColumns.has(column.id)) {
+        throw new Error(
+          `Duplicate source column "${column.name}" in RENAME COLUMN statement`,
+        );
+      }
+
+      sourceColumns.set(column.id, column);
+
+      return {
+        column,
+        from: rename.from,
+        to: rename.to,
+        normalizedTo: normalizeIdentifier(rename.to),
+      };
+    });
+
+    // Phase 2: Reject duplicate destinations.
+    for (const rename of resolvedRenames) {
+      if (destinationNames.has(rename.normalizedTo)) {
+        throw new Error(
+          `Duplicate destination column "${rename.to}" in RENAME COLUMN statement`,
+        );
+      }
+
+      destinationNames.add(rename.normalizedTo);
+    }
+
+    // Phase 3: Reject collisions with columns that are not being renamed.
+    for (const rename of resolvedRenames) {
+      const existingColumn = table.columns.getByName(rename.to);
+
+      if (
+        existingColumn !== undefined &&
+        !sourceColumns.has(existingColumn.id)
+      ) {
+        throw new Error(`Replacement column name "${rename.to}" already taken`);
       }
     }
 
+    // for (const rename of resolvedRenames) {
+    //   stmtActions.push(
+    //     new RenameColumnAction(
+    //       dbName,
+    //       tableName,
+    //       rename.from,
+    //       rename.to,
+    //     ),
+    //   );
+    // }
+
     stmtActions.push(
-      new RenameColumnAction(dbName, tableName, stmt.from, stmt.to),
+      new RenameColumnsAction(
+        dbName,
+        tableName,
+        resolvedRenames.map((rr) => {
+          return {
+            columnId: rr.column.id,
+            newName: rr.to,
+          };
+        }),
+      ),
     );
   } else if (stmt.op === "drop_column") {
+    const columnsSeen = new Set<ColumnId>();
+
     for (const columnName of stmt.columnNames) {
-      table.columns.requireByName(columnName);
+      const column = table.columns.requireByName(columnName);
+
+      if (columnsSeen.has(column.id)) {
+        throw new Error(
+          `Duplicate column "${column.name}" in DROP COLUMN statement`,
+        );
+      }
+
+      columnsSeen.add(column.id);
 
       stmtActions.push(new DropColumnAction(dbName, tableName, columnName));
     }
   } else if (stmt.op === "modify_column") {
+    const columnsSeen = new Set<ColumnId>();
+
     for (const columnSpec of stmt.columnList) {
-      table.columns.requireByName(columnSpec.name);
+      const column = table.columns.requireByName(columnSpec.name);
+
+      if (columnsSeen.has(column.id)) {
+        throw new Error(
+          `Duplicate column "${column.name}" in ALTER COLUMN statement`,
+        );
+      }
+
+      columnsSeen.add(column.id);
 
       stmtActions.push(
         new AlterColumnAction(

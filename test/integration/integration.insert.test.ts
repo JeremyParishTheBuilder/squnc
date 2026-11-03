@@ -1032,4 +1032,29 @@ describe("Integration::insertSelect", () => {
       sql.insertInto("Users").defaultValues().execute();
     }).toThrow();
   });
+
+  it("rejects duplicate target columns after identifier normalization", () => {
+    const sql = createTestPostgresSql();
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
+    sql.createTable(...createTableTestSpec("Users", {
+      Id: {
+        type: SQL_DECIMAL,
+        nullable: false,
+        primaryKey: true,
+      },
+      Name: {
+        type: SQL_VARCHAR,
+        nullable: false,
+      },
+    })).execute();
+
+    expect(() => {
+      sql.insertInto("Users", ["Name", "name"])
+        .values([["Alice", "Bob"]])
+        .execute();
+    }).toThrow(/duplicate column/i);
+  });
 });

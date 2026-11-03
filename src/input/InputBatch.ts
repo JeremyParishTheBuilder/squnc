@@ -12,6 +12,7 @@ import {
   DeleteFromBuilder,
   type ConstraintStatement,
   type StatementBuilder,
+  type ColumnRename,
 } from "../statements/index.js";
 import { type InlineColumnSpec } from "../relational/Column.js";
 import { type ConstraintSpec } from "../relational/Constraint.js";
@@ -267,15 +268,14 @@ export abstract class InputBatch {
   }
 
   protected renameColumn(
-    from: string,
-    to: string,
+    columnRenames: ColumnRename[],
     fragment: string = "RENAME COLUMN",
   ) {
     this.assertAllowed("renameColumn", fragment);
     if (!(this.currentBuilder instanceof AlterTableBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
     }
-    this.currentBuilder.renameColumn(from, to);
+    this.currentBuilder.renameColumn(columnRenames);
     return this;
   }
 
