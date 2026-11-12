@@ -7,7 +7,7 @@ import { DEFAULT } from "../dialect/keywords.js";
 import {
   canBeIndexed,
   castValue,
-  isAssignable,
+  isCastable,
   matchesSqlType,
   SQL_DECIMAL,
   SQL_INTEGER,
@@ -107,7 +107,7 @@ export class Column extends Immutable {
       throw new Error(`Column types already identical`);
     }
 
-    if (!isAssignable(oldType, newType)) {
+    if (!isCastable(oldType, newType)) {
       throw new Error(
         `Cannot alter column ${this.name}:
         ${oldType} cannot convert to ${newType}`,
@@ -375,14 +375,6 @@ export type InlineColumnSpec = ColumnSpec & {
   };
   check?: PredicateNode;
 };
-
-//TODO - might delete, pending decision on column builder
-// export type ColumnShape = Omit<ColumnSpec, "name"> & {
-//   autoIncrement?: {
-//     next?: number; // must be reset on copy
-//     step: number;
-//   };
-// };
 
 export function assertTypeIndexable(type: SqlType): void {
   if (!canBeIndexed(type)) {

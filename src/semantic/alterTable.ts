@@ -55,7 +55,7 @@ import { resolvePredicate } from "./predicate.js";
 import { assertNever } from "../utils/assertNever.js";
 import { IdAllocator } from "../types/IdAllocator.js";
 import { RenameTableAction } from "../actions/RenameTableAction.js";
-import { matchesSqlType } from "../types/SqlType.js";
+import { isCastable, matchesSqlType } from "../types/SqlType.js";
 import { RenameConstraintsAction } from "../actions/RenameConstraintsAction.js";
 import { AlterColumnSetNotNullAction } from "../actions/AlterColumnSetNotNullAction.js";
 import { AlterColumnDropNotNullAction } from "../actions/AlterColumnDropNotNullAction.js";
@@ -960,6 +960,13 @@ function bindAlterTableSetColumnType(
   const column = workingSchema.requireColumn(columnName);
   const type = operation.type;
 
+  if (!isCastable(column.type, type)) {
+    throw new Error(
+      `Cannot alter column ${column.name}:
+      ${column.type} cannot convert to ${type}`,
+    );
+  }
+
   const planId =
     column.identity.kind === "planned" ? column.identity.planId : undefined;
 
@@ -1058,14 +1065,6 @@ function bindAlterTableSetColumnDefault(
       `Default value '${defaultValue}' does not match column SQL type '${column.type}'`,
     );
   }
-
-  // TODO - pending decision on whether default value should be an expression
-  // const exprSqlType = sqlTypeFromExpression(expr);
-  // if (exprSqlType !== column.type) {
-  //   throw new Error(
-  //     `Default value expression type '${exprSqlType}' does not match column SQL type '${column.type}'`,
-  //   );
-  // }
 
   const planId =
     column.identity.kind === "planned" ? column.identity.planId : undefined;
