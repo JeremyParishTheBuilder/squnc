@@ -14,12 +14,16 @@ export class DeleteFromBuilder implements StatementBuilder {
 
   constructor(private table: string) {}
 
-  where(predicate: PredicateNode) {
+  where(predicate: PredicateNode): this {
     this.whereClause = predicate;
+
+    return this;
   }
 
-  returning(cols: string[]) {
+  returning(cols: string[]): this {
     this.returningCols = cols;
+
+    return this;
   }
 
   getNextCalls(): {

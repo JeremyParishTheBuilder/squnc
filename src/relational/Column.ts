@@ -292,6 +292,33 @@ export class Column extends Immutable {
       name: newName,
     } as Partial<this>);
   }
+
+  public updateDefault(defaultValue: ColumnValue | undefined): this {
+    if (
+      defaultValue !== undefined &&
+      !matchesSqlType(defaultValue, this.type)
+    ) {
+      throw new Error(
+        `Default value '${defaultValue}' does not match column SQL type '${this.type}'`,
+      );
+    }
+
+    return this.with({
+      defaultValue,
+    } as Partial<this>);
+  }
+
+  public updateNullable(nullable: boolean): this {
+    if (nullable === false && this.data.includes(null)) {
+      throw new Error(
+        `Existing NULL values prohibit setting column to NOT NULL`,
+      );
+    }
+
+    return this.with({
+      nullable: nullable,
+    } as Partial<this>);
+  }
 }
 
 export type ColumnSpec = {
@@ -326,10 +353,18 @@ export function validateColumnSpec(spec: ColumnSpec): void {
   if (spec.autoIncrementStep !== undefined && spec.defaultValue !== undefined) {
     throw new Error(`Column cannot have default value and autoIncrement.`);
   }
+
+  if (
+    spec.defaultValue !== undefined &&
+    !matchesSqlType(spec.defaultValue, spec.type)
+  ) {
+    throw new Error(
+      `Default value '${spec.defaultValue}' does not match column SQL type '${spec.type}'`,
+    );
+  }
 }
 
 export type InlineColumnSpec = ColumnSpec & {
-  //export type InlineColumnSpec = Omit<ColumnSpec, "name"> & {
   unique?: boolean;
   primaryKey?: boolean;
   references?: {
@@ -341,12 +376,13 @@ export type InlineColumnSpec = ColumnSpec & {
   check?: PredicateNode;
 };
 
-export type ColumnShape = Omit<ColumnSpec, "name"> & {
-  autoIncrement?: {
-    next?: number; // must be reset on copy
-    step: number;
-  };
-};
+//TODO - might delete, pending decision on column builder
+// export type ColumnShape = Omit<ColumnSpec, "name"> & {
+//   autoIncrement?: {
+//     next?: number; // must be reset on copy
+//     step: number;
+//   };
+// };
 
 export function assertTypeIndexable(type: SqlType): void {
   if (!canBeIndexed(type)) {

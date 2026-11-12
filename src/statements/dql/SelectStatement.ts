@@ -18,8 +18,10 @@ export class SelectBuilder extends QueryStatementBuilder {
     super();
   }
 
-  where(predicate: PredicateNode) {
+  where(predicate: PredicateNode): this {
     this.whereClause = predicate;
+
+    return this;
   }
 
   getNextCalls() {

@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { Table } from '../../src/relational/Table.js';
 import { buildTable, createCheckTestSpec } from '../utils/buildSchema.js';
+import { SQL_INTEGER } from '../../src/types/SqlType.js';
 
 describe('Table::removeCheck', () => {
   function buildTableWithCheck(): Table {
     return buildTable()
       .createColumn({
         name: "Age",
-        type: Number,
+        type: SQL_INTEGER,
       })
       .createCheck(createCheckTestSpec({
         name: "CHK_PositiveAge",

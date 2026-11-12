@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { buildTable } from '../utils/buildSchema.js';
-
+import { SQL_INTEGER } from '../../src/types/SqlType.js';
 
 describe('Table::requireUnique', () => {
   it('returns the unique constraint', () => {
     const table = buildTable()
       .createColumn({
         name: "Id",
-        type: Number,
+        type: SQL_INTEGER,
         nullable: false,
       })
       .createIndex({
@@ -17,8 +17,7 @@ describe('Table::requireUnique', () => {
       })
       .createUnique({
         name: "U1",
-        indexName: "I1",
-        ownsIndex: true,
+        using: "I1",
       });
 
     expect(

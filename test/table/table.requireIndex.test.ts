@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { buildTable, createColumnTestSpec } from '../utils/buildSchema.js';
+import { SQL_INTEGER } from '../../src/types/SqlType.js';
 
 describe('Table::requireIndex', () => {
   it('returns an existing index', () => {
     const table = buildTable()
-      .createColumn(createColumnTestSpec({ name: "C1", type: Number }))
+      .createColumn(createColumnTestSpec({ name: "C1", type: SQL_INTEGER }))
       .createIndex({
         name: "I1",
         columns: ["C1"],
@@ -27,7 +28,7 @@ describe('Table::requireIndex', () => {
 
   it('retrieves an index regardless of casing', () => {
     const table = buildTable()
-      .createColumn(createColumnTestSpec({ name: "C1", type: Number }))
+      .createColumn(createColumnTestSpec({ name: "C1", type: SQL_INTEGER }))
       .createIndex({
         name: "UserLookup",
         columns: ["C1"],
@@ -49,7 +50,7 @@ describe('Table::requireIndex', () => {
 
   it('preserves original index casing', () => {
     const table = buildTable()
-      .createColumn(createColumnTestSpec({ name: "C1", type: Number }))
+      .createColumn(createColumnTestSpec({ name: "C1", type: SQL_INTEGER }))
       .createIndex({
         name: "UserLookup",
         columns: ["C1"],

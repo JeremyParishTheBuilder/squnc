@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { addForeignKeyByName, buildTable, createIndexTestSpec } from '../utils/buildSchema.js';
+import { buildTable, createForeignKeyTestSpec_Table, createIndexTestSpec, } from '../utils/buildSchema.js';
+import { SQL_DECIMAL, SQL_VARCHAR } from '../../src/types/SqlType.js';
 
 describe('Table::removeIndex', () => {
   it('removes an index from the table', () => {
     const table = buildTable()
-      .createColumn({ name: "C1", type: Number })
+      .createColumn({ name: "C1", type: SQL_DECIMAL })
       .createIndex({
         name: "I1",
         columns: ["C1"],
@@ -20,7 +21,7 @@ describe('Table::removeIndex', () => {
 
   it('does not mutate original table (immutability)', () => {
     const table = buildTable()
-      .createColumn({ name: "C1", type: Number })
+      .createColumn({ name: "C1", type: SQL_DECIMAL })
       .createIndex({
         name: "I1",
         columns: ["C1"],
@@ -50,19 +51,15 @@ describe('Table::removeIndex', () => {
     const table = buildTable()
       .createColumn({
         name: "c1",
-        type: Number,
-      })
-      .createIndex(createIndexTestSpec({
-        name: "i1",
-      }));
+        type: SQL_DECIMAL,
+      });
 
-    const tableWithFk = addForeignKeyByName(table,
-      {
-        name: "FK_Parent",
+    const tableWithFk = table
+      .createForeignKey(createForeignKeyTestSpec_Table({
+        name: "FK1",
         columns: ["c1"],
         reverseIndex: "i1",
-      }
-    );
+      }));
 
     expect(() =>
       tableWithFk.removeIndex("i1")
@@ -73,7 +70,7 @@ describe('Table::removeIndex', () => {
     const table = buildTable()
       .createColumn({
         name: "Email",
-        type: String,
+        type: SQL_VARCHAR,
       })
       .createIndex({
         name: "IDX_Email",
@@ -93,7 +90,7 @@ describe('Table::removeIndex', () => {
     const table = buildTable()
       .createColumn({
         name: "Id",
-        type: Number,
+        type: SQL_DECIMAL,
         nullable: false,
       })
       .createIndex(createIndexTestSpec({

@@ -36,6 +36,8 @@ export const MYSQL_RULES: DialectRules = {
 
   dml: {
     maxColumnRenames: null,
+    maxConstraintRenames: null,
+    maxIndexRenames: null,
   },
 
   dql: {

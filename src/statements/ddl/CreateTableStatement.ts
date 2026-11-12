@@ -22,10 +22,12 @@ export class CreateTableBuilder implements StatementBuilder {
     private constraints?: ConstraintSpec[],
   ) {}
 
-  as(query: QueryStatement) {
+  as(query: QueryStatement): this {
     this.assertNoSource();
 
     this.source = query;
+
+    return this;
   }
 
   getNextCalls() {

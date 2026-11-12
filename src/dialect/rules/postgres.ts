@@ -41,6 +41,8 @@ export const POSTGRES_RULES: DialectRules = {
 
   dml: {
     maxColumnRenames: 1,
+    maxConstraintRenames: 1,
+    maxIndexRenames: 1,
   },
 
   dql: {

@@ -25,6 +25,8 @@ export interface DialectRules {
 
   dml: {
     maxColumnRenames: number | null;
+    maxConstraintRenames: number | null;
+    maxIndexRenames: number | null;
   };
 
   dql: {

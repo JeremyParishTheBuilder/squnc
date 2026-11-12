@@ -119,29 +119,28 @@ export function createCheckTestSpec(
 export function createForeignKeyTestSpec_Table(
   overrides: Partial<{
     name: string,
-    columns: ColumnId[],
-    reverseIndex: IndexId,
+    columns: string[],
+    reverseIndex: string,
     parentTable: TableId,
     parentColumns: ColumnId[],
     parentIndex: IndexId,
   }> = {},
 ): {
   name: string,
-  columns: ColumnId[],
-  reverseIndex: IndexId,
+  columns: string[],
+  reverseIndex?: string,
   parentTable: TableId,
   parentColumns: ColumnId[],
   parentIndex: IndexId,
 } {
   const ids = createTestIdService();
 
-  const columns = overrides.columns ?? [ids.nextColumnId()];
-  const parentColumns = overrides.parentColumns ?? columns;
+  const columns = overrides.columns ?? ["c1"];
+  const parentColumns = overrides.parentColumns ?? [ids.nextColumnId()];
 
   return {
     name: "fk1",
     columns,
-    reverseIndex: overrides.reverseIndex ?? ids.nextIndexId(),
     parentTable: overrides.parentTable ?? ids.nextTableId(),
     parentColumns,
     parentIndex: overrides.parentIndex ?? ids.nextIndexId(),
@@ -164,44 +163,6 @@ export function createForeignKeyTestSpec_Database(
     reverseIndex: "i1",
     ...overrides,
   };
-}
-
-export function buildTableWithForeignKey() {
-    const table = buildTable()
-      .createColumn(createColumnTestSpec({
-        name: "c1",
-      }))
-      .createIndex(createIndexTestSpec({
-        name: "ri",
-        columns: ["c1"]
-      }));
-
-    return addForeignKeyByName(table, {
-        name: "FK1",
-        columns: ["c1"],
-        reverseIndex: "ri",
-      });
-  }
-
-export function addForeignKeyByName(
-  table: Table,
-  spec: {
-    name: string;
-    columns: string[];
-    reverseIndex?: string;
-  }
-): Table {
-  return table.createForeignKey(
-    createForeignKeyTestSpec_Table({
-      name: spec.name,
-      columns: spec.columns.map(c =>
-        table.columns.requireIdByName(c)
-      ),
-      reverseIndex: spec.reverseIndex
-      ? table.indexes.requireIdByName(spec.reverseIndex)
-      : undefined,
-    })
-  );
 }
 
 interface DefaultBuildOptions {
@@ -303,11 +264,6 @@ export function buildCompositeKeyDatabase(
     )
     .addTable(
       buildTable({name: "child", columns: ["c1", "c2"]})
-        .createIndex({
-          name: "A_B",
-          columns: ["c1", "c2"],
-          unique: false,
-        })
     )
     .createForeignKey("child", {
       name: "fk",
@@ -339,11 +295,6 @@ export function buildParentChildDatabase(
     )
     .addTable(
       buildTable({name: "child", columns: ["ref"]})
-        .createIndex({
-          name: "ri1",
-          columns: ["ref"],
-          unique: false,
-        })
     )
     .createForeignKey("child", createForeignKeyTestSpec_Database({
       name: "fk1",
@@ -351,5 +302,17 @@ export function buildParentChildDatabase(
       reverseIndex: "ri1",
       parentTable: "parent",
       parentColumns: ["id"],
+    }));
+}
+
+export function buildTableWithForeignKey() {
+  return buildTable()
+    .createColumn(createColumnTestSpec({
+      name: "c1",
+    }))
+    .createForeignKey(createForeignKeyTestSpec_Table({
+      name: "FK1",
+      columns: ["c1"],
+      reverseIndex: "ri",
     }));
 }

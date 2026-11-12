@@ -9,7 +9,6 @@ import {
 import { SQL_DECIMAL, SQL_VARCHAR } from '../../src/types/SqlType.js';
 
 describe('Database::removeIndex', () => {
-
   it('removes an index from a table', () => {
     const db = buildDatabase()
       .addTable(
@@ -133,11 +132,6 @@ describe('Database::removeIndex', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex(createIndexTestSpec({
-        name: "FKR_Id",
-        columns: ["roleId"],
-        unique: false,
       }));
 
     const db = buildDatabase()
@@ -181,11 +175,6 @@ describe('Database::removeIndex', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex(createIndexTestSpec({
-        name: "FKR_Id",
-        columns: ["roleId"],
-        unique: false,
       }));
 
     const db = buildDatabase()
@@ -233,11 +222,6 @@ describe('Database::removeIndex', () => {
         name: "PK_Employees",
         columns: ["id"],
         unique: true,
-      }))
-      .createIndex(createIndexTestSpec({
-        name: "FKR_Employees",
-        columns: ["managerId"],
-        unique: false,
       }));
 
     const db = buildDatabase()
@@ -324,4 +308,87 @@ describe('Database::removeIndex', () => {
     ).toBeDefined();
   });
 
+  it('creates an internal reverse index for a foreign key', () => {
+    const parent = buildTable({name: "Roles"})
+      .createColumn(createColumnTestSpec({
+        name: "id",
+        type: SQL_DECIMAL,
+      }))
+      .createIndex(createIndexTestSpec({
+        name: "PK_Roles",
+        columns: ["id"],
+        unique: true,
+      }));
+
+    const child = buildTable({name: "Users"})
+      .createColumn(createColumnTestSpec({
+        name: "roleId",
+        type: SQL_DECIMAL,
+      }));
+
+    const db = buildDatabase()
+      .addTable(parent)
+      .addTable(child)
+      .createForeignKey("Users", createForeignKeyTestSpec_Database({
+        name: "FK_Users_Roles",
+        columns: ["roleId"],
+        reverseIndex: "FKR_RoleId",
+        parentTable: "Roles",
+        parentColumns: ["id"],
+      }));
+
+    const updatedChild = db.tables.requireByName("Users");
+
+    expect(
+      updatedChild.indexes.requireByName("FKR_RoleId").internal
+    ).toBe(true);
+  });
+
+  it('preserves a parent index while multiple foreign keys reference it', () => {
+    const parent = buildTable({name: "Roles"})
+      .createColumn(createColumnTestSpec({
+        name: "id",
+        type: SQL_DECIMAL,
+      }))
+      .createIndex(createIndexTestSpec({
+        name: "PK_Roles",
+        columns: ["id"],
+        unique: true,
+      }));
+
+    const users = buildTable({name: "Users"})
+      .createColumn(createColumnTestSpec({
+        name: "roleId",
+        type: SQL_DECIMAL,
+      }));
+
+    const admins = buildTable({name: "Admins"})
+      .createColumn(createColumnTestSpec({
+        name: "roleId",
+        type: SQL_DECIMAL,
+      }));
+
+    const db = buildDatabase()
+      .addTable(parent)
+      .addTable(users)
+      .addTable(admins)
+      .createForeignKey("Users", createForeignKeyTestSpec_Database({
+        name: "FK_Users_Roles",
+        columns: ["roleId"],
+        reverseIndex: "FKR_Users",
+        parentTable: "Roles",
+        parentColumns: ["id"],
+      }))
+      .createForeignKey("Admins", createForeignKeyTestSpec_Database({
+        name: "FK_Admins_Roles",
+        columns: ["roleId"],
+        reverseIndex: "FKR_Admins",
+        parentTable: "Roles",
+        parentColumns: ["id"],
+      }));
+
+    expect(() =>
+      db.removeIndex("Roles", "PK_Roles")
+    ).toThrow();
+  });
 });

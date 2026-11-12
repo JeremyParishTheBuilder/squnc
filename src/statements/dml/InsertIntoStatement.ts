@@ -30,35 +30,43 @@ export class InsertIntoBuilder implements StatementBuilder {
       typeof table === "string" ? new TableReferenceNode(table) : table;
   }
 
-  defaultValues() {
+  defaultValues(): this {
     this.assertNoSource();
 
     this.source = { kind: "defaultValues" };
+
+    return this;
   }
 
-  values(data: InsertValuesInput[][]) {
+  values(data: InsertValuesInput[][]): this {
     this.assertNoSource();
 
     this.source = {
       kind: "values",
       rows: normalizeInsertValues(data),
     };
+
+    return this;
   }
 
-  select(query: QueryStatement) {
+  select(query: QueryStatement): this {
     this.assertNoSource();
 
     this.source = {
       kind: "query",
       query,
     };
+
+    return this;
   }
 
-  returning(cols: string[]) {
+  returning(cols: string[]): this {
     if (!this.source) {
       throw new Error(`Cannot call returning() before Insert Source provided`);
     }
     this.returningCols = cols;
+
+    return this;
   }
 
   getNextCalls() {

@@ -1,20 +1,20 @@
 import { type Action } from "./Action.js";
 import { type Databases } from "../relational/Databases.js";
-import { type PrimaryKeySpec } from "../relational/Constraint.js";
 
 export class AddPrimaryKeyAction implements Action {
   constructor(
     private dbName: string,
     private tableName: string,
-    private spec: Omit<PrimaryKeySpec, "kind">,
+    private spec: {
+      name: string;
+      columns?: string[];
+      using?: string;
+      nullsDistinct: boolean;
+    },
   ) {}
 
   apply(databases: Databases): Databases {
     const db = databases.requireByName(this.dbName);
-    //const table = db.tables.requireByName(this.tableName);
-
-    //const columnIds = this.spec.columns.map(c => table.columns.requireIdByName(c));
-    //const index = table.requireUniqueIndexByColumns(columnIds);
 
     const updatedTable = db.tables
       .requireByName(this.tableName)

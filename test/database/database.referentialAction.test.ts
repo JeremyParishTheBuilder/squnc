@@ -25,12 +25,10 @@ describe("Database Referential Actions", () => {
     ]);
 
     let child = buildTable({name: "Child"})
-      .createColumn(createColumnTestSpec({ name: "ParentID", type: SQL_DECIMAL }))
-      .createIndex({
-        name: "FKRI_Id",
-        columns: ["ParentID"],
-        unique: false,
-      });
+      .createColumn(createColumnTestSpec({
+        name: "ParentID",
+        type: SQL_DECIMAL,
+      }));
 
     child = child.addRows([
       [1],
@@ -71,12 +69,10 @@ describe("Database Referential Actions", () => {
     ]);
 
     let child = buildTable({name: "Child"})
-      .createColumn(createColumnTestSpec({ name: "ParentID", type: SQL_DECIMAL }))
-      .createIndex({
-        name: "FKRI_Id",
-        columns: ["ParentID"],
-        unique: false,
-      });
+      .createColumn(createColumnTestSpec({
+        name: "ParentID",
+        type: SQL_DECIMAL,
+      }));
 
     child = child.addRows([
       [1],
@@ -123,12 +119,7 @@ describe("Database Referential Actions", () => {
         name: "ParentID",
         type: SQL_DECIMAL,
         nullable: true,
-      }))
-      .createIndex({
-        name: "FKRI_Id",
-        columns: ["ParentID"],
-        unique: false,
-      });
+      }));
 
     child = child.addRows([
       [1],
@@ -171,12 +162,10 @@ describe("Database Referential Actions", () => {
     ]);
 
     let child = buildTable({name: "Child"})
-      .createColumn(createColumnTestSpec({ name: "ParentID", type: SQL_DECIMAL }))
-      .createIndex({
-        name: "FKRI_Id",
-        columns: ["ParentID"],
-        unique: false,
-      });
+      .createColumn(createColumnTestSpec({
+        name: "ParentID",
+        type: SQL_DECIMAL,
+      }));
 
     child = child.addRows([
       [1],
@@ -221,11 +210,6 @@ describe("Database Referential Actions", () => {
         name: "PK_NODE",
         columns: ["ID"],
         unique: true,
-      })
-      .createIndex({
-        name: "FKRI_Id",
-        columns: ["ParentID"],
-        unique: false,
       });
 
     table = table.addRows([
@@ -271,11 +255,6 @@ describe("Database Referential Actions", () => {
         name: "PK_NODE",
         columns: ["ID"],
         unique: true,
-      })
-      .createIndex({
-        name: "FKRI_Id",
-        columns: ["RefID"],
-        unique: false,
       });
 
     table = table.addRows([
@@ -325,12 +304,7 @@ describe("Database Referential Actions", () => {
 
     let child = buildTable({name: "Child"})
       .createColumn(createColumnTestSpec({ name: "FA", type: SQL_DECIMAL }))
-      .createColumn(createColumnTestSpec({ name: "FB", type: SQL_DECIMAL }))
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["FA", "FB"],
-        unique: false,
-      });
+      .createColumn(createColumnTestSpec({ name: "FB", type: SQL_DECIMAL }));
 
     child = child.addRows([
       [1, 2],
@@ -387,12 +361,7 @@ describe("Database Referential Actions", () => {
         name: "FB",
         type: SQL_DECIMAL,
         nullable: true,
-      }))
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["FA", "FB"],
-        unique: false,
-      });
+      }));
 
     child = child.addRows([
       [1, 2],
@@ -440,11 +409,6 @@ describe("Database Referential Actions", () => {
         name: "PK_B",
         columns: ["AID"],
         unique: true,
-      })
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["AID"],
-        unique: false,
       });
     
     b = b.addRows([
@@ -452,12 +416,7 @@ describe("Database Referential Actions", () => {
     ]);
 
     let c = buildTable({name: "C"})
-      .createColumn(createColumnTestSpec({ name: "BID", type: SQL_DECIMAL }))
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["BID"],
-        unique: false,
-      });
+      .createColumn(createColumnTestSpec({ name: "BID", type: SQL_DECIMAL }));
 
     c = c.addRows([
       [1],
@@ -513,12 +472,10 @@ describe("Database Referential Actions", () => {
     ]);
 
     let child = buildTable({name: "Child"})
-      .createColumn(createColumnTestSpec({ name: "ParentID", type: SQL_DECIMAL }))
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["ParentID"],
-        unique: false,
-      });
+      .createColumn(createColumnTestSpec({
+        name: "ParentID",
+        type: SQL_DECIMAL,
+      }));
 
     child = child.addRows([
       [1],
@@ -597,11 +554,6 @@ describe("Database Referential Actions", () => {
         name: "pk_b",
         columns: ["id"],
         unique: true,
-      })
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["a_id"],
-        unique: false,
       });
 
     b = b.addRows([
@@ -618,11 +570,6 @@ describe("Database Referential Actions", () => {
         name: "pk_c",
         columns: ["id"],
         unique: true,
-      })
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["a_id"],
-        unique: false,
       });
 
     c = c.addRows([
@@ -631,17 +578,7 @@ describe("Database Referential Actions", () => {
 
     let d = buildTable({name: "D"})
       .createColumn(createColumnTestSpec({ name: "B_ID", type: SQL_DECIMAL }))
-      .createColumn(createColumnTestSpec({ name: "C_ID", type: SQL_DECIMAL }))
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["b_id"],
-        unique: false,
-      })
-      .createIndex({
-        name: "FKRI_CHILD2",
-        columns: ["c_id"],
-        unique: false,
-      });
+      .createColumn(createColumnTestSpec({ name: "C_ID", type: SQL_DECIMAL }));
 
     d = d.addRows([
       [10, 20],
@@ -740,11 +677,6 @@ describe("Database Referential Actions", () => {
         name: "pk_b",
         columns: ["id"],
         unique: true,
-      })
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["a_id"],
-        unique: false,
       });
 
     b = b.addRows([
@@ -752,12 +684,7 @@ describe("Database Referential Actions", () => {
     ]);
 
     let c = buildTable({name: "C"})
-      .createColumn(createColumnTestSpec({ name: "B_ID", type: SQL_DECIMAL }))
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["b_id"],
-        unique: false,
-      });
+      .createColumn(createColumnTestSpec({ name: "B_ID", type: SQL_DECIMAL }));
 
     c = c.addRows([
       [2],
@@ -818,11 +745,6 @@ describe("Database Referential Actions", () => {
         name: "pk_a",
         columns: ["id"],
         unique: true,
-      })
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["b_id"],
-        unique: false,
       });
 
     const b = buildTable({name: "B"})
@@ -832,11 +754,6 @@ describe("Database Referential Actions", () => {
         name: "pk_b",
         columns: ["id"],
         unique: true,
-      })
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["a_id"],
-        unique: false,
       });
 
     const db = buildDatabase()
@@ -907,12 +824,10 @@ describe("Database Referential Actions", () => {
     ]);
 
     let child = buildTable({name: "Child"})
-      .createColumn(createColumnTestSpec({ name: "PARENT_ID", type: SQL_DECIMAL }))
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["Parent_ID"],
-        unique: false,
-      });
+      .createColumn(createColumnTestSpec({
+        name: "PARENT_ID",
+        type: SQL_DECIMAL,
+      }));
 
     child = child.addRows([
       [1],

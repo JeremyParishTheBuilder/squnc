@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { buildTable } from '../utils/buildSchema';
+import { SQL_VARCHAR } from '../../src/types/SqlType.ts';
 
 describe('Table::requirePrimaryKey', () => {
   it('returns the primary key', () => {
     const table = buildTable()
       .createColumn({
         name: "Id",
-        type: Number,
+        type: SQL_VARCHAR,
         nullable: false,
       })
       .createIndex({
@@ -16,7 +17,7 @@ describe('Table::requirePrimaryKey', () => {
       })
       .createPrimaryKey({
         name: "PK_T1",
-        columns: ["Id"],
+        using: "PK_T1",
       });
 
     expect(

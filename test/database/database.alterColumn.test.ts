@@ -25,11 +25,6 @@ describe("Database::alterColumn", () => {
         name: "UserId",
         type: SQL_DECIMAL,
         nullable: false,
-      })
-      .createIndex({
-        name: "FKRI",
-        columns: ["UserId"],
-        unique: false,
       });
 
     const database = buildDatabase()
@@ -74,11 +69,6 @@ describe("Database::alterColumn", () => {
         name: "UserId",
         type: SQL_DECIMAL,
         nullable: false,
-      })
-      .createIndex({
-        name: "FKRI",
-        columns: ["UserId"],
-        unique: false,
       });
 
     const database = buildDatabase()
@@ -132,11 +122,6 @@ describe("Database::alterColumn", () => {
         name: "UserSecondId",
         type: SQL_DECIMAL,
         nullable: false,
-      })
-      .createIndex({
-        name: "FKRI",
-        columns: ["UserFirstId", "UserSecondId"],
-        unique: false,
       });
 
     const database = buildDatabase()

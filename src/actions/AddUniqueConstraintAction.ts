@@ -18,7 +18,7 @@ export class AddUniqueConstraintAction implements Action {
 
     const table = db.tables.requireByName(this.tableName);
 
-    const updatedTable = table.createUniqueConstraint(this.spec);
+    const updatedTable = table.createUnique(this.spec);
 
     return databases.update(db.updateTable(updatedTable));
   }
