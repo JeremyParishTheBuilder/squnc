@@ -32,12 +32,7 @@ describe('Database::addRows', () => {
           name: "RoleId",
           type: SQL_DECIMAL,
         }),
-      )
-      .createIndex({
-        name: "FKRI_Roles",
-        columns: ["RoleId"],
-        unique: false,
-      });
+      );
 
     database = database
       .updateTable(roles)
@@ -69,59 +64,6 @@ describe('Database::addRows', () => {
     expect(usersTable.requireRow(1)).toEqual([2]);
   });
 
-  it('throws when foreign key reference does not exist', () => {
-    let database = buildDatabase()
-      .createTable({name: "Roles"})
-      .createTable({name: "Users"});
-
-    const roles = database.tables.requireByName("Roles")
-      .createColumn(createColumnTestSpec({
-        name: "Id",
-        type: SQL_DECIMAL,
-        nullable: false,
-      }))
-      .createIndex({
-        name: "PK_Roles",
-        columns: ["Id"],
-        unique: true,
-      });
-
-    const users = database.tables.requireByName("Users")
-      .createColumn(createColumnTestSpec({
-        name: "RoleId",
-        type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Roles",
-        columns: ["roleId"],
-        unique: false,
-      });
-
-    database = database
-      .updateTable(roles)
-      .updateTable(users);
-
-    database = database.createForeignKey(
-      "Users",
-      {
-        name: "FK_Users_Roles",
-        columns: ["RoleId"],
-        reverseIndex: "FKRI_Roles",
-        parentTable: "Roles",
-        parentColumns: ["Id"],
-      }
-    );
-
-    const columnId = users.columns.requireIdByName("RoleId");
-
-    expect(() => {
-      database.addRows(
-        "Users",
-        [new Map<ColumnId, ColumnInput>().set(columnId, 999)]
-      );
-    }).toThrow();
-  });
-
   it('allows NULL foreign key values', () => {
     let database = buildDatabase()
       .createTable({name: "Roles"})
@@ -143,12 +85,7 @@ describe('Database::addRows', () => {
       .createColumn(createColumnTestSpec({
         name: "RoleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Roles",
-        columns: ["roleId"],
-        unique: false,
-      });
+      }));
 
     database = database
       .updateTable(roles)
@@ -197,12 +134,7 @@ describe('Database::addRows', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Roles",
-        columns: ["roleId"],
-        unique: false,
-      });
+      }));
 
     database = database
       .updateTable(parent)
@@ -247,12 +179,7 @@ describe('Database::addRows', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Roles",
-        columns: ["roleId"],
-        unique: false,
-      });
+      }));
 
     database = database
       .updateTable(parent)

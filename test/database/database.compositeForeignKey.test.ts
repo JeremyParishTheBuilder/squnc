@@ -37,11 +37,6 @@ describe('Composite Foreign Keys', () => {
               name: "FB",
               type: SQL_DECIMAL,
             }))
-            .createIndex({
-            name: "FKRI_CHILD",
-            columns: ["FA", "FB"],
-            unique: false,
-          })
         )
         .createForeignKey(
           "Child",
@@ -86,11 +81,6 @@ describe('Composite Foreign Keys', () => {
             name: "FB",
             type: SQL_DECIMAL,
           }))
-          .createIndex({
-            name: "FKRI_CHILD",
-            columns: ["FA", "FB"],
-            unique: false,
-          })
       );
 
     db = db.createForeignKey(
@@ -153,11 +143,6 @@ describe('Composite Foreign Keys', () => {
             name: "FB",
             type: SQL_DECIMAL,
           }))
-          .createIndex({
-            name: "FKRI_CHILD",
-            columns: ["FA", "FB"],
-            unique: false,
-          })
       );
 
     db = db.createForeignKey(
@@ -217,11 +202,6 @@ describe('Composite Foreign Keys', () => {
             name: "FB",
             type: SQL_DECIMAL,
           }))
-          .createIndex({
-            name: "FKRI_CHILD",
-            columns: ["FA", "FB"],
-            unique: false,
-          })
       );
 
     db = db.createForeignKey(
@@ -277,12 +257,7 @@ describe('Composite Foreign Keys', () => {
       .createColumn(createColumnTestSpec({
         name: "FB",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["FA", "FB"],
-        unique: false,
-      });
+      }));
 
     child = child.addRows([[1, 2]]);
 
@@ -340,12 +315,7 @@ describe('Composite Foreign Keys', () => {
       .createColumn(createColumnTestSpec({
         name: "FB",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["FA", "FB"],
-        unique: false,
-      });
+      }));
 
     child = child.addRows([[1, 2]]);
 
@@ -399,12 +369,7 @@ describe('Composite Foreign Keys', () => {
       .createColumn(createColumnTestSpec({
         name: "FB",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_CHILD",
-        columns: ["FA", "FB"],
-        unique: false,
-      });
+      }));
 
     child = child.addRows([[1, 2]]);
 
@@ -462,11 +427,6 @@ describe('Composite Foreign Keys', () => {
             name: "FB",
             type: SQL_DECIMAL,
           }))
-          .createIndex({
-            name: "FKRI_CHILD",
-            columns: ["FA", "FB"],
-            unique: false,
-          })
       );
 
     db = db.createForeignKey(
@@ -524,11 +484,6 @@ describe('Composite Foreign Keys', () => {
               name: "FB",
               type: SQL_DECIMAL,
             }))
-            .createIndex({
-              name: "FKRI_CHILD",
-              columns: ["FA", "FB"],
-              unique: false,
-            })
         )
         .createForeignKey(
           "Child",

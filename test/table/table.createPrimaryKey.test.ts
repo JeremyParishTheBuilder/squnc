@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { buildTable, createColumnTestSpec } from '../utils/buildSchema.js';
+import { SQL_INTEGER } from '../../src/types/SqlType.js';
 
 describe('Table::createPrimaryKey', () => {
   it('adds a primary key to the table', () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Id",
-        type: Number,
+        type: SQL_INTEGER,
         nullable: false,
       }))
       .createIndex({
@@ -29,7 +30,7 @@ describe('Table::createPrimaryKey', () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Id",
-        type: Number,
+        type: SQL_INTEGER,
         nullable: false,
       }))
       .createIndex({
@@ -54,7 +55,7 @@ describe('Table::createPrimaryKey', () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Id",
-        type: Number,
+        type: SQL_INTEGER,
         nullable: false,
       }))
       .createIndex({
@@ -75,27 +76,11 @@ describe('Table::createPrimaryKey', () => {
     }).toThrow();
   });
 
-  it('throws when index for referenced columns does not exist', () => {
-    const table = buildTable()
-      .createColumn(createColumnTestSpec({
-        name: "Id",
-        type: Number,
-        nullable: false,
-      }));
-
-    expect(() => {
-      table.createPrimaryKey({
-        name: "PK_T1",
-        columns: ["Id"],
-      });
-    }).toThrow();
-  });
-
   it('throws when primary key columns are nullable', () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Id",
-        type: Number,
+        type: SQL_INTEGER,
         nullable: true,
       }))
       .createIndex({
@@ -116,7 +101,7 @@ describe('Table::createPrimaryKey', () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Id",
-        type: Number,
+        type: SQL_INTEGER,
         nullable: false,
       }))
       .createIndex({
@@ -137,12 +122,12 @@ describe('Table::createPrimaryKey', () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Id",
-        type: Number,
+        type: SQL_INTEGER,
         nullable: false,
       }))
       .createColumn(createColumnTestSpec({
         name: "OtherId",
-        type: Number,
+        type: SQL_INTEGER,
         nullable: false,
       }))
       .createIndex({
@@ -152,8 +137,7 @@ describe('Table::createPrimaryKey', () => {
       })
       .createUnique({
         name: "UQ_1",
-        indexName: "UQ_1",
-        ownsIndex: false,
+        using: "UQ_1",
       })
       .createIndex({
         name: "UQ_2",
@@ -173,7 +157,7 @@ describe('Table::createPrimaryKey', () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Id",
-        type: Number,
+        type: SQL_INTEGER,
         nullable: false,
       }))
       .createIndex({
@@ -185,7 +169,7 @@ describe('Table::createPrimaryKey', () => {
     expect(() => {
       table.createPrimaryKey({
         name: "PK_T1",
-        columns: ["Id"],
+        using: "PK_T1",
       });
     }).toThrow();
   });

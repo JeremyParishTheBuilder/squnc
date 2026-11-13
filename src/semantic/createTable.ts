@@ -10,11 +10,8 @@ import {
 } from "../relational/Column.js";
 import { type ConstraintSpec } from "../relational/Constraint.js";
 import { AddForeignKeyAction } from "../actions/AddForeignKeyAction.js";
-import { AddPrimaryKeyAction } from "../actions/AddPrimaryKeyAction.js";
 import { AddCheckAction } from "../actions/AddCheckAction.js";
-import { AddIndexAction } from "../actions/AddIndexAction.js";
 import { CONSTRAINT_KIND } from "../relational/ConstraintKind.js";
-import { PrimaryKey } from "../relational/PrimaryKey.js";
 import { ForeignKey } from "../relational/ForeignKey.js";
 import { AddUniqueConstraintAction } from "../actions/AddUniqueConstraintAction.js";
 import type { QueryPlan } from "../evaluation/plan/QueryPlan.js";
@@ -322,15 +319,6 @@ export function bindCreateTable(
         const reverseIndexName = ForeignKey.defaultIndexName(spec.name);
 
         actions.push(
-          new AddIndexAction(dbName, tableName, {
-            name: reverseIndexName,
-            columns: spec.columns,
-            unique: false,
-            nullsDistinct: ctx.rules.constraints.nullsDistinct,
-          }),
-        );
-
-        actions.push(
           new AddForeignKeyAction(dbName, tableName, {
             ...spec,
             onDelete:
@@ -369,15 +357,13 @@ export function bindCreateTable(
 
       case CONSTRAINT_KIND.primaryKey:
         actions.push(
-          new AddIndexAction(dbName, tableName, {
-            name: PrimaryKey.defaultIndexName(spec.name),
+          new AddUniqueConstraintAction(dbName, tableName, {
+            name: spec.name,
             columns: spec.columns,
-            unique: true,
+            using: spec.using,
             nullsDistinct: ctx.rules.constraints.nullsDistinct,
           }),
         );
-
-        actions.push(new AddPrimaryKeyAction(dbName, tableName, spec));
 
         break;
 

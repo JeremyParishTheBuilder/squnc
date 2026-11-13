@@ -20,7 +20,7 @@ export class UpdateSetBuilder implements StatementBuilder {
 
   constructor(private table: string) {}
 
-  set(data: Record<string, UpdateInput>) {
+  set(data: Record<string, UpdateInput>): this {
     const normalized: Record<string, ExpressionNode | DefaultValueNode> = {};
 
     for (const key in data) {
@@ -28,18 +28,24 @@ export class UpdateSetBuilder implements StatementBuilder {
     }
 
     this.values = normalized;
+
+    return this;
   }
 
-  where(predicate: PredicateNode) {
+  where(predicate: PredicateNode): this {
     this.whereClause = predicate;
+
+    return this;
   }
 
-  returning(cols: string[]) {
+  returning(cols: string[]): this {
     if (!this.values) {
       throw new Error(`Cannot call returning() before values()`);
     }
 
     this.returningCols = cols;
+
+    return this;
   }
 
   getNextCalls() {

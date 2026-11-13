@@ -52,12 +52,7 @@ describe('Database::removeRow', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Roles",
-        columns: ["roleId"],
-        unique: false,
-      });
+      }));
 
     users = users.addRows([[1]]);
 
@@ -100,12 +95,7 @@ describe('Database::removeRow', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Roles",
-        columns: ["roleId"],
-        unique: false,
-      });
+      }));
 
     users = users.addRows([[1]]);
 
@@ -157,12 +147,7 @@ describe('Database::removeRow', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Roles",
-        columns: ["roleId"],
-        unique: false,
-      });
+      }));
 
     users = users.addRows([[1]]);
 
@@ -361,12 +346,7 @@ describe('Database::removeRow', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Users",
-        columns: ["roleId"],
-        unique: false,
-      });
+      }));
 
     users = users.addRows([[1]]);
     users = users.addRows([[2]]);

@@ -27,11 +27,6 @@ describe('Database::createForeignKey', () => {
         name: "UserId",
         type: SQL_DECIMAL,
         nullable: false,
-      })
-      .createIndex({
-        name: "FKRI",
-        columns: ["UserId"],
-        unique: false,
       });
 
     const database = buildDatabase()
@@ -74,11 +69,6 @@ describe('Database::createForeignKey', () => {
         name: "UserId",
         type: SQL_DECIMAL,
         nullable: false,
-      })
-      .createIndex({
-        name: "FKRI",
-        columns: ["UserId"],
-        unique: false,
       });
 
     const database = buildDatabase()
@@ -127,11 +117,6 @@ describe('Database::createForeignKey', () => {
         name: "UserId",
         type: SQL_DECIMAL,
         nullable: false,
-      })
-      .createIndex({
-        name: "FKRI",
-        columns: ["UserId"],
-        unique: false,
       });
 
     const database = buildDatabase()
@@ -243,11 +228,6 @@ describe('Database::createForeignKey', () => {
         name: "UserId",
         type: SQL_DECIMAL,
         nullable: false,
-      })
-      .createIndex({
-        name: "FKRI",
-        columns: ["UserId"],
-        unique: false,
       });
 
     const database = buildDatabase()
@@ -347,19 +327,45 @@ describe('Database::createForeignKey', () => {
   });
 
   it('supports case-insensitive table and column references', () => {
-    const database = buildParentChildDatabase();
+    let database = buildDatabase();
 
-    const updated = database.createForeignKey("chilD", createForeignKeyTestSpec_Database({
+    const users = buildTable({name: "Users"})
+      .createColumn({
+        name: "Id",
+        type: SQL_DECIMAL,
+        nullable: false,
+      })
+      .addRows(
+        [[1]]
+      )
+      .createIndex({
+        name: "ui1",
+        columns: ["Id"],
+        unique: true,
+      });
+
+    const posts = buildTable({name: "Posts"})
+      .createColumn({
+        name: "UserId",
+        type: SQL_DECIMAL,
+        nullable: false,
+      });
+
+    database = database
+      .addTable(users)
+      .addTable(posts);
+
+    const updated = database.createForeignKey("postS", createForeignKeyTestSpec_Database({
         name: "fK2",
-        columns: ["reF"],
+        columns: ["uSeRiD"],
         reverseIndex: "rI1",
-        parentTable: "parenT",
+        parentTable: "useRs",
         parentColumns: ["iD"],
       }));
 
     expect(
       updated
-        .tables.requireByName("Child")
+        .tables.requireByName("Posts")
         .foreignKeys.requireByName("fk2")
     ).toBeDefined();
   });
@@ -395,11 +401,6 @@ describe('Database::createForeignKey', () => {
         name: "UserId",
         type: SQL_DECIMAL,
         nullable: false,
-      })
-      .createIndex({
-        name: "FKRI",
-        columns: ["UserId"],
-        unique: false,
       })
       .addRows(
         [[999]]
@@ -445,11 +446,6 @@ describe('Database::createForeignKey', () => {
         type: SQL_DECIMAL,
         nullable: false,
       })
-      .createIndex({
-        name: "FKRI",
-        columns: ["UserId"],
-        unique: false,
-      })
       .addRows(
         [[1]]
       );
@@ -490,11 +486,6 @@ describe('Database::createForeignKey', () => {
         name: "UserId",
         type: SQL_DECIMAL,
         nullable: true,
-      })
-      .createIndex({
-        name: "FKRI",
-        columns: ["UserId"],
-        unique: false,
       })
       .addRows(
         [[null]]

@@ -39,6 +39,12 @@ export const POSTGRES_RULES: DialectRules = {
     ctasAllowsConstraints: false,
   },
 
+  dml: {
+    maxColumnRenames: 1,
+    maxConstraintRenames: 1,
+    maxIndexRenames: 1,
+  },
+
   dql: {
     denyDuplicateDerivedTableColumnNames: false,
   },

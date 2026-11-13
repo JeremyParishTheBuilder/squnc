@@ -1,8 +1,7 @@
 import { ColumnSchema } from "./ColumnSchema.js";
 
 export class TableSchema {
-  public observedRows = 0;
-  // TODO, set back to private
+  private observedRows = 0;
 
   constructor(
     readonly name: string,

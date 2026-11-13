@@ -9,6 +9,10 @@ import type { QueryProjection } from "../ast/query/QueryProjection.js";
 import type { TabularExpressionInput } from "../statements/dql/TabularExpressionReferencer.js";
 import type { TableReferenceNode } from "../ast/tabular/TableReferenceNode.js";
 import type { PublicInputBatch } from "./PublicInputBatch.js";
+import type { SqlType } from "../types/SqlType.js";
+import type { ColumnValue } from "../types/ColumnValue.js";
+import type { IndexSpec } from "../relational/Index.js";
+import type { IndexColumnArg } from "../statements/ddl/CreateIndexBuilder.js";
 
 export class MySqlInputBatch extends InputBatch implements PublicInputBatch {
   constructor(
@@ -62,24 +66,77 @@ export class MySqlInputBatch extends InputBatch implements PublicInputBatch {
     return super.alterTable(table);
   }
 
-  add(columnList: InlineColumnSpec[]) {
-    return super.addColumn(columnList);
+  addColumn(columnOrList: InlineColumnSpec | InlineColumnSpec[]) {
+    return super.addColumn(columnOrList);
+  }
+  add = this.addColumn;
+
+  dropColumn(nameOrNames: string | string[]) {
+    return super.dropColumn(nameOrNames);
   }
 
-  dropColumn(columnNames: string[]) {
-    return super.dropColumn(columnNames);
+  renameColumn(name: string) {
+    return super.renameColumn(name);
   }
 
-  renameColumn(from: string, to: string) {
-    return super.renameColumn(from, to);
+  to(name: string) {
+    return super.to(name);
   }
 
-  alterColumn(columnList: InlineColumnSpec[]) {
-    return super.alterColumn(columnList);
+  modifyColumn(name: string) {
+    return super.alterColumn(name);
+  }
+
+  setType(type: SqlType) {
+    return super.setType(type);
+  }
+
+  setDefault(value: ColumnValue) {
+    return super.setDefault(value);
+  }
+
+  dropDefault() {
+    return super.dropDefault();
+  }
+
+  setNotNull() {
+    return super.setNotNull();
+  }
+
+  dropNotNull() {
+    return super.dropNotNull();
   }
 
   addConstraint(name: string) {
     return super.addConstraint(name);
+  }
+
+  dropConstraint(nameOrNames: string | string[]) {
+    return super.dropConstraint(nameOrNames);
+  }
+
+  addIndex(spec: IndexSpec) {
+    return super.addIndex(spec);
+  }
+
+  dropIndex(name: string) {
+    return super.dropIndex(name);
+  }
+
+  renameIndex(name: string) {
+    return super.renameIndex(name);
+  }
+
+  renameConstraint(name: string) {
+    return super.renameConstraint(name);
+  }
+
+  dropPrimaryKey() {
+    return super.dropPrimaryKey();
+  }
+
+  primaryKey(columns: string[]) {
+    return super.primaryKey(columns);
   }
 
   unique(columns: string[]) {
@@ -98,6 +155,10 @@ export class MySqlInputBatch extends InputBatch implements PublicInputBatch {
     return super.values(data);
   }
 
+  defaultValues() {
+    return super.defaultValues();
+  }
+
   update(table: string) {
     return super.update(table);
   }
@@ -114,6 +175,14 @@ export class MySqlInputBatch extends InputBatch implements PublicInputBatch {
     return super.returning(cols);
   }
 
+  createIndex(name: string) {
+    return super.createIndex(name);
+  }
+
+  createUniqueIndex(name: string) {
+    return super.createUniqueIndex(name);
+  }
+
   select(projectionOrQuery: QueryProjection | InputBatch) {
     return super.select(projectionOrQuery);
   }
@@ -127,8 +196,8 @@ export class MySqlInputBatch extends InputBatch implements PublicInputBatch {
     return super.innerJoin(input);
   }
 
-  on(predicate: PredicateNode) {
-    return super.on(predicate);
+  on(arg1: string | PredicateNode, arg2?: IndexColumnArg[]) {
+    return super.on(arg1, arg2);
   }
 
   where(predicate: PredicateNode) {

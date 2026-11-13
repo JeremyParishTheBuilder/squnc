@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { buildTable, createColumnTestSpec } from '../utils/buildSchema.js';
+import { SQL_INTEGER } from '../../src/types/SqlType.js';
 
 describe('Table::removePrimaryKey', () => {
   function buildTableWithPrimaryKey() {
     return buildTable()
       .createColumn(createColumnTestSpec({
         name: "Id",
-        type: Number,
+        type: SQL_INTEGER,
         nullable: false,
       }))
       .createIndex({
@@ -16,7 +17,7 @@ describe('Table::removePrimaryKey', () => {
       })
       .createPrimaryKey({
         name: "PK_T1",
-        columns: ["Id"],
+        using: "PK_T1",
       });
   }
 
@@ -60,5 +61,29 @@ describe('Table::removePrimaryKey', () => {
     expect(
       updated.indexes.requireByName("PK_T1")
     ).toBeDefined();
+  });
+
+  it('removes an internal backing index when removing the primary key', () => {
+    const table = buildTable()
+      .createColumn(createColumnTestSpec({
+        name: "Id",
+        type: SQL_INTEGER,
+        nullable: false,
+      }))
+      .createIndex({
+        name: "PK_T1",
+        columns: ["Id"],
+        unique: true,
+        internal: true,
+      })
+      .createPrimaryKey({
+        name: "PK_T1",
+        using: "PK_T1",
+      });
+
+    const updated = table.removePrimaryKey();
+
+    expect(updated.primaryKey).toBeUndefined();
+    expect(updated.indexes.getByName("PK_T1")).toBeUndefined();
   });
 });

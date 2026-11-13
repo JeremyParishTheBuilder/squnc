@@ -53,12 +53,7 @@ describe('Database::removeTable', () => {
         name: "UserId",
         type: SQL_DECIMAL,
         nullable: false,
-      }))
-      .createIndex({
-        name: "FKRI_Posts",
-        columns: ["UserId"],
-        unique: false,
-      });
+      }));
 
     const updated = database
       .updateTable(users)

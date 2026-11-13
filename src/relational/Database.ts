@@ -131,25 +131,22 @@ export class Database extends Immutable {
     spec: {
       name: string;
       columns: string[];
-      reverseIndex: string;
+      reverseIndex?: string;
       parentTable: string;
       parentColumns: string[];
       onDelete?: ReferentialAction;
       onUpdate?: ReferentialAction;
     },
   ): Database {
+    let database: Database = this as this;
+
     const childTable = this.tables.requireByName(tableName);
 
-    const childColumnIds = spec.columns.map((c) =>
-      childTable.columns.requireIdByName(c),
-    );
-    const childColumns = childColumnIds.map((c) =>
-      childTable.columns.require(c),
+    const childColumns = spec.columns.map((c) =>
+      childTable.columns.requireByName(c),
     );
 
-    const reverseIndex = childTable.indexes.requireByName(spec.reverseIndex);
-
-    const parentTable = this.tables.requireByName(spec.parentTable);
+    let parentTable = this.tables.requireByName(spec.parentTable);
 
     const parentColumnIds = spec.parentColumns.map((c) =>
       parentTable.columns.requireIdByName(c),
@@ -159,14 +156,17 @@ export class Database extends Immutable {
     );
 
     const parentIndex =
-      parentTable.requireUniqueIndexByColumns(parentColumnIds);
+      parentTable.requireSatisfactoryParentIndex(parentColumnIds);
+
+    if (parentIndex.internal !== false) {
+      parentTable = parentTable.publishIndex(parentIndex.name);
+      database = database.updateTable(parentTable);
+    }
 
     assertForeignKeyColumnCompatibility(childColumns, parentColumns);
 
     const updatedChildTable = childTable.createForeignKey({
       ...spec,
-      columns: childColumnIds,
-      reverseIndex: reverseIndex.id,
       parentTable: parentTable.id,
       parentColumns: parentColumnIds,
       parentIndex: parentIndex.id,
@@ -174,9 +174,9 @@ export class Database extends Immutable {
 
     const foreignKey = updatedChildTable.foreignKeys.requireByName(spec.name);
 
-    this.assertExistingRowsSatisfyForeignKey(childTable, foreignKey);
+    this.assertExistingRowsSatisfyForeignKey(updatedChildTable, foreignKey);
 
-    return this.updateTable(updatedChildTable);
+    return database.updateTable(updatedChildTable);
   }
 
   public assertExistingRowsSatisfyForeignKey(

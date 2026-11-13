@@ -1,4 +1,3 @@
-import type { DiscoveryResults } from "../mapping/discovery/DiscoveryResults.js";
 import { JsonValuePath } from "../mapping/value/JsonValuePath.js";
 import type { ColumnValue } from "../types/ColumnValue.js";
 import { CaseBuilder } from "./expression/CaseBuilder.js";

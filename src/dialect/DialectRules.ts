@@ -23,6 +23,12 @@ export interface DialectRules {
     ctasAllowsConstraints: boolean;
   };
 
+  dml: {
+    maxColumnRenames: number | null;
+    maxConstraintRenames: number | null;
+    maxIndexRenames: number | null;
+  };
+
   dql: {
     denyDuplicateDerivedTableColumnNames: boolean;
   };

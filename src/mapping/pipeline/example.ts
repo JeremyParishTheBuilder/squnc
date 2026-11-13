@@ -17,10 +17,7 @@ export function runExampleMappingOrchestration(
 
   const engine = EngineRegistry.getInstance().engine(engineName);
 
-  mapping.buildBusinessDatabase(
-    engine,
-    businessDatabaseName,
-  );
+  mapping.buildBusinessDatabase(engine, businessDatabaseName);
 
   mapping.import<PostgresInputBatch>({
     engine,

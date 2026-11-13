@@ -1,377 +1,456 @@
 import { type BaseStatement, type StatementBuilder } from "../Statement.js";
 import { type InlineColumnSpec } from "../../relational/Column.js";
-import {
-  type ForeignKeySpec,
-  type ConstraintSpec,
-} from "../../relational/Constraint.js";
+import { type ConstraintSpec } from "../../relational/Constraint.js";
 import { CONSTRAINT_KIND } from "../../relational/ConstraintKind.js";
 import { type ReferentialAction } from "../../relational/ReferentialAction.js";
-import { type PredicateNode } from "../../ast/predicate/PredicateNode.js";
+import { AddConstraintBuilder } from "./AddConstraintBuilder.js";
+import { RenameColumnBuilder } from "./RenameColumnBuilder.js";
+import { RenameConstraintBuilder } from "./RenameConstraintBuilder.js";
+import { AlterColumnBuilder } from "./AlterColumnBuilder.js";
+import type { ColumnValue } from "../../types/ColumnValue.js";
+import type { SqlType } from "../../types/SqlType.js";
+import type { IndexSpec } from "../../relational/Index.js";
+import { RenameIndexBuilder } from "./RenameIndexBuilder.js";
+import type { Predicate } from "../../evaluation/predicate/Predicate.js";
+import type { RowView } from "../../relational/RowView.js";
 
-export type AlterTableStatement =
-  | AlterAddColumn
-  | AlterDropColumn
-  | AlterRenameColumn
-  | AlterModifyColumn
-  | AlterAddConstraint
-  | AlterDropConstraint
-  | AlterDropPrimaryKey;
-
-interface AlterTableBaseStatement extends BaseStatement {
+export interface AlterTableStatement extends BaseStatement {
   kind: "alter_table";
   table: string;
+  operations: AlterTableOperation[];
 }
 
-interface AlterAddColumn extends AlterTableBaseStatement {
+export type AlterTableOperation =
+  | RenameTableOperation
+  | AddColumnOperation
+  | DropColumnOperation
+  | RenameColumnsOperation
+  | AddConstraintOperation
+  | DropConstraintOperation
+  | DropPrimaryKeyOperation
+  | RenameConstraintsOperation
+  | SetColumnTypeOperation
+  | SetColumnDefaultOperation
+  | DropColumnDefaultOperation
+  | SetColumnNotNullOperation
+  | DropColumnNotNullOperation
+  | RenameIndexesOperation
+  | AddIndexOperation
+  | DropIndexOperation;
+
+export interface RenameTableOperation {
+  op: "rename_table";
+  newName: string;
+}
+
+export interface AddColumnOperation {
   op: "add_column";
-  columnList: InlineColumnSpec[];
+  columnSpec: InlineColumnSpec;
 }
 
-interface AlterDropColumn extends AlterTableBaseStatement {
+export interface DropColumnOperation {
   op: "drop_column";
-  columnNames: string[];
+  columnName: string;
 }
 
-interface AlterRenameColumn extends AlterTableBaseStatement {
-  op: "rename_column";
+export interface ObjectRename {
   from: string;
   to: string;
 }
 
-interface AlterModifyColumn extends AlterTableBaseStatement {
-  op: "modify_column";
-  columnList: InlineColumnSpec[];
+export type ColumnRename = ObjectRename;
+export type ConstraintRename = ObjectRename;
+export type IndexRename = ObjectRename;
+
+export interface RenameIndexesOperation {
+  op: "rename_indexes";
+  indexRenames: IndexRename[];
 }
 
-export interface AlterAddConstraint extends AlterTableBaseStatement {
+export interface RenameColumnsOperation {
+  op: "rename_columns";
+  columnRenames: ColumnRename[];
+}
+
+export interface SetColumnTypeOperation {
+  op: "set_column_type";
+  columnName: string;
+  type: SqlType;
+}
+
+export interface SetColumnDefaultOperation {
+  op: "set_column_default";
+  columnName: string;
+  value: ColumnValue;
+}
+
+export interface DropColumnDefaultOperation {
+  op: "drop_column_default";
+  columnName: string;
+}
+
+export interface SetColumnNotNullOperation {
+  op: "set_column_not_null";
+  columnName: string;
+}
+
+export interface DropColumnNotNullOperation {
+  op: "drop_column_not_null";
+  columnName: string;
+}
+
+export interface AddConstraintOperation {
   op: "add_constraint";
   constraint: ConstraintSpec;
 }
 
-interface AlterDropConstraint extends AlterTableBaseStatement {
+export interface DropConstraintOperation {
   op: "drop_constraint";
   constraintName: string;
 }
 
-interface AlterDropPrimaryKey extends AlterTableBaseStatement {
+export interface RenameConstraintsOperation {
+  op: "rename_constraints";
+  constraintRenames: ConstraintRename[];
+}
+
+export interface DropPrimaryKeyOperation {
   op: "drop_primary_key";
 }
 
-type AlterTableBuilderState =
-  | { state: "init" }
-  | {
-      state: "add_column";
-      columnList: InlineColumnSpec[];
-    }
-  | { state: "drop_column"; columnNames: string[] }
-  | { state: "rename_column"; from: string; to: string }
-  | { state: "modify_column"; columnList: InlineColumnSpec[] }
-  | {
-      state: "add_constraint";
-      partial: Partial<ConstraintSpec>;
-      constraint?: ConstraintSpec;
-    }
-  | {
-      state: "add_constraint_references";
-      constraint: ForeignKeySpec;
-    }
-  | { state: "drop_constraint"; constraintName: string }
-  | { state: "drop_primary_key" };
+export interface AddIndexOperation {
+  op: "add_index";
+  index: IndexSpec;
+}
+
+export interface DropIndexOperation {
+  op: "drop_index";
+  indexName: string;
+}
 
 export class AlterTableBuilder implements StatementBuilder {
-  private state: AlterTableBuilderState = { state: "init" };
+  private operations: AlterTableOperation[] = [];
 
   constructor(private table: string) {}
 
-  private assertState<S extends AlterTableBuilderState["state"]>(
-    expected: S,
-  ): Extract<AlterTableBuilderState, { state: S }> {
-    if (this.state.state !== expected) {
-      throw new Error(
-        `AlterTableBuilder in ${this.state.state} state, expected ${expected}`,
-      );
-    }
-    return this.state as Extract<AlterTableBuilderState, { state: S }>;
-  }
-
-  private transitionState(next: AlterTableBuilderState) {
-    this.state = next;
-  }
-
-  addColumn(columnList: InlineColumnSpec[]) {
-    this.assertState("init");
-    this.transitionState({ state: "add_column", columnList });
-  }
-
-  dropColumn(columnNames: string[]) {
-    this.assertState("init");
-    this.transitionState({ state: "drop_column", columnNames });
-  }
-
-  renameColumn(from: string, to: string) {
-    this.assertState("init");
-    this.transitionState({ state: "rename_column", from, to });
-  }
-
-  modifyColumn(columnList: InlineColumnSpec[]) {
-    this.assertState("init");
-    this.transitionState({ state: "modify_column", columnList });
-  }
-
-  dropConstraint(constraintName: string) {
-    this.assertState("init");
-    this.transitionState({ state: "drop_constraint", constraintName });
-  }
-
-  dropPrimaryKey() {
-    this.assertState("init");
-    this.transitionState({ state: "drop_primary_key" });
-  }
-
-  addConstraint(constraintName: string) {
-    this.assertState("init");
-    this.transitionState({
-      state: "add_constraint",
-      partial: { name: constraintName },
-    });
-  }
-
-  primaryKey(columns: string[]) {
-    this.state = this.assertState("add_constraint");
-
-    const partial = this.state.partial;
-
-    if (partial.kind) {
-      throw new Error("Constraint kind already specified");
-    }
-
-    this.state.constraint = {
-      ...partial,
-      kind: CONSTRAINT_KIND.primaryKey,
-      columns: columns,
-    } as ConstraintSpec;
-  }
-
-  unique(columns: string[]) {
-    this.state = this.assertState("add_constraint");
-
-    const partial = this.state.partial;
-
-    if (partial.kind) {
-      throw new Error("Constraint kind already specified");
-    }
-
-    this.state.constraint = {
-      ...partial,
-      kind: CONSTRAINT_KIND.unique,
-      columns: columns,
-    } as ConstraintSpec;
-  }
-
-  check(predicate: PredicateNode) {
-    this.state = this.assertState("add_constraint");
-
-    const partial = this.state.partial;
-
-    if (partial.kind) {
-      throw new Error("Constraint kind already specified");
-    }
-
-    this.state.constraint = {
-      ...partial,
-      kind: CONSTRAINT_KIND.check,
-      predicate: predicate,
-    } as ConstraintSpec;
-  }
-
-  foreignKey(childColumns: string[]) {
-    this.state = this.assertState("add_constraint");
-
-    const partial = this.state.partial;
-    if (partial.kind) {
-      throw new Error("Constraint kind already specified");
-    }
-
-    this.state.partial = {
-      ...partial,
-      kind: CONSTRAINT_KIND.foreignKey,
-      columns: childColumns,
-    };
-  }
-
-  references(parentTable: string, parentColumns: string[]) {
-    this.state = this.assertState("add_constraint");
-
-    const partial = this.state.partial;
+  public withOperation(operation: AlterTableOperation): this {
+    const index = this.operations.length - 1;
+    const latestOperation = this.operations[index];
 
     if (
-      partial.kind !== CONSTRAINT_KIND.foreignKey ||
-      !partial?.columns ||
-      !partial.name
+      operation.op === "rename_columns" &&
+      latestOperation?.op === "rename_columns"
     ) {
-      throw new Error("Incomplete foreign key definition");
+      this.operations[index] = {
+        ...latestOperation,
+        columnRenames: [
+          ...latestOperation.columnRenames,
+          ...operation.columnRenames,
+        ],
+      };
+    } else if (
+      operation.op === "rename_constraints" &&
+      latestOperation?.op === "rename_constraints"
+    ) {
+      this.operations[index] = {
+        ...latestOperation,
+        constraintRenames: [
+          ...latestOperation.constraintRenames,
+          ...operation.constraintRenames,
+        ],
+      };
+    } else if (
+      operation.op === "rename_indexes" &&
+      latestOperation?.op === "rename_indexes"
+    ) {
+      this.operations[index] = {
+        ...latestOperation,
+        indexRenames: [
+          ...latestOperation.indexRenames,
+          ...operation.indexRenames,
+        ],
+      };
+    } else {
+      this.operations.push(operation);
     }
 
-    if (partial.kind !== CONSTRAINT_KIND.foreignKey) {
-      throw new Error(
-        `References is only used for foreign keys, not ${partial.kind}`,
-      );
-    }
+    return this;
+  }
 
-    this.transitionState({
-      state: "add_constraint_references",
-      constraint: {
-        ...partial,
-        parentTable,
-        parentColumns,
-      } as ForeignKeySpec,
+  renameTo(newName: string): this {
+    return this.withOperation({
+      op: "rename_table",
+      newName,
     });
   }
 
-  onDelete(action: ReferentialAction) {
-    this.state = this.assertState("add_constraint_references");
+  addColumn(columnOrList: InlineColumnSpec | InlineColumnSpec[]): this {
+    const columnList = Array.isArray(columnOrList)
+      ? columnOrList
+      : [columnOrList];
 
-    this.state.constraint.onDelete = action;
-  }
-
-  onUpdate(action: ReferentialAction) {
-    this.state = this.assertState("add_constraint_references");
-
-    this.state.constraint.onUpdate = action;
-  }
-
-  getNextCalls() {
-    switch (this.state.state) {
-      case "init":
-        return {
-          required: [
-            "addColumn",
-            "dropColumn",
-            "renameColumn",
-            "modifyColumn",
-            "addConstraint",
-            "dropConstraint",
-            "dropPrimaryKey",
-          ],
-          optional: [],
-        };
-
-      case "add_constraint":
-        if (!this.state.constraint) {
-          if (!this.state.partial.kind) {
-            return {
-              required: ["primaryKey", "unique", "foreignKey", "check"],
-              optional: [],
-            };
-          }
-          if (this.state.partial.kind === CONSTRAINT_KIND.foreignKey) {
-            return { required: ["references"], optional: [] };
-          }
-        }
-        break;
-
-      case "add_constraint_references": {
-        if (
-          !this.state.constraint ||
-          this.state.constraint.kind !== CONSTRAINT_KIND.foreignKey
-        ) {
-          return { required: [], optional: [] };
-        }
-        const optionalCalls = [];
-        if (!this.state.constraint.onDelete) {
-          optionalCalls.push("onDelete");
-        }
-        if (!this.state.constraint.onUpdate) {
-          optionalCalls.push("onUpdate");
-        }
-        return { required: [], optional: optionalCalls };
-      }
-
-      default:
-        return { required: [], optional: [] };
+    for (const columnSpec of columnList) {
+      this.withOperation({
+        op: "add_column",
+        columnSpec,
+      });
     }
 
-    return { required: [], optional: [] };
+    return this;
+  }
+
+  dropColumn(nameOrNames: string | string[]): this {
+    const columnNames = Array.isArray(nameOrNames)
+      ? nameOrNames
+      : [nameOrNames];
+
+    for (const columnName of columnNames) {
+      this.withOperation({
+        op: "drop_column",
+        columnName,
+      });
+    }
+
+    return this;
+  }
+
+  renameColumn(name: string): RenameColumnBuilder {
+    return new RenameColumnBuilder(this, name);
+  }
+
+  alterColumn(name: string): AlterColumnBuilder {
+    return new AlterColumnBuilder(this, name);
+  }
+
+  dropConstraint(nameOrNames: string | string[]): this {
+    const constraintNames = Array.isArray(nameOrNames)
+      ? nameOrNames
+      : [nameOrNames];
+
+    for (const constraintName of constraintNames) {
+      this.withOperation({
+        op: "drop_constraint",
+        constraintName,
+      });
+    }
+
+    return this;
+  }
+
+  dropPrimaryKey(): this {
+    return this.withOperation({
+      op: "drop_primary_key",
+    });
+  }
+
+  addConstraint(name: string): AddConstraintBuilder {
+    return new AddConstraintBuilder(this, name);
+  }
+
+  onDelete(action: ReferentialAction): this {
+    const index = this.operations.length - 1;
+    const operation = this.operations[index];
+
+    if (
+      operation?.op !== "add_constraint" ||
+      operation.constraint.kind !== CONSTRAINT_KIND.foreignKey ||
+      operation.constraint.onDelete !== undefined
+    ) {
+      throw new Error("Latest operation not accepting ON DELETE");
+    }
+
+    this.operations[index] = {
+      ...operation,
+      constraint: {
+        ...operation.constraint,
+        onDelete: action,
+      },
+    };
+
+    return this;
+  }
+
+  onUpdate(action: ReferentialAction): this {
+    const index = this.operations.length - 1;
+    const operation = this.operations[index];
+
+    if (
+      operation?.op !== "add_constraint" ||
+      operation.constraint.kind !== CONSTRAINT_KIND.foreignKey ||
+      operation.constraint.onUpdate !== undefined
+    ) {
+      throw new Error("Latest operation not accepting ON UPDATE");
+    }
+
+    this.operations[index] = {
+      ...operation,
+      constraint: {
+        ...operation.constraint,
+        onUpdate: action,
+      },
+    };
+
+    return this;
+  }
+
+  nullsDistinct(): this {
+    const index = this.operations.length - 1;
+    const operation = this.operations[index];
+
+    if (
+      operation?.op !== "add_index" ||
+      operation.index.nullsDistinct !== undefined
+    ) {
+      throw new Error("Latest operation not accepting NULLS DISTINCT");
+    }
+
+    this.operations[index] = {
+      ...operation,
+      index: {
+        ...operation.index,
+        nullsDistinct: true,
+      },
+    };
+
+    return this;
+  }
+
+  nullsNotDistinct(): this {
+    const index = this.operations.length - 1;
+    const operation = this.operations[index];
+
+    if (
+      operation?.op !== "add_index" ||
+      operation.index.nullsDistinct !== undefined
+    ) {
+      throw new Error("Latest operation not accepting NULLS NOT DISTINCT");
+    }
+
+    this.operations[index] = {
+      ...operation,
+      index: {
+        ...operation.index,
+        nullsDistinct: false,
+      },
+    };
+
+    return this;
+  }
+
+  where(predicate: Predicate<RowView>): this {
+    const index = this.operations.length - 1;
+    const operation = this.operations[index];
+
+    if (
+      operation?.op !== "add_index" ||
+      operation.index.predicate !== undefined
+    ) {
+      throw new Error("Latest operation not accepting WHERE");
+    }
+
+    this.operations[index] = {
+      ...operation,
+      index: {
+        ...operation.index,
+        predicate,
+      },
+    };
+
+    return this;
+  }
+
+  renameConstraint(name: string): RenameConstraintBuilder {
+    return new RenameConstraintBuilder(this, name);
+  }
+
+  renameIndex(name: string): RenameIndexBuilder {
+    return new RenameIndexBuilder(this, name);
+  }
+
+  addIndex(indexSpec: IndexSpec): this {
+    this.withOperation({
+      op: "add_index",
+      index: indexSpec,
+    });
+
+    return this;
+  }
+
+  dropIndex(indexName: string): this {
+    this.withOperation({
+      op: "drop_index",
+      indexName,
+    });
+
+    return this;
+  }
+
+  getNextCalls(): {
+    required: string[];
+    optional: string[];
+  } {
+    const operationsList = [
+      "renameTable",
+      "addColumn",
+      "dropColumn",
+      "renameColumn",
+      "alterColumn",
+      "addConstraint",
+      "dropConstraint",
+      "dropPrimaryKey",
+      "renameConstraint",
+      "renameIndex",
+      "dropIndex",
+      "addIndex",
+    ];
+
+    const required: string[] = [];
+    const optional: string[] = [];
+
+    if (this.operations.length === 0) {
+      required.push(...operationsList);
+    } else {
+      optional.push(...operationsList);
+    }
+
+    const operation = this.operations.at(-1);
+
+    if (
+      operation?.op === "add_constraint" &&
+      operation.constraint.kind === CONSTRAINT_KIND.foreignKey
+    ) {
+      if (operation.constraint.onUpdate === undefined) {
+        optional.push("onUpdate");
+      }
+
+      if (operation.constraint.onDelete === undefined) {
+        optional.push("onDelete");
+      }
+    }
+
+    if (operation?.op === "add_index") {
+      if (operation.index.nullsDistinct === undefined) {
+        optional.push("nullsDistinct");
+        optional.push("nullsNotDistinct");
+      }
+
+      if (operation.index.predicate === undefined) {
+        optional.push("where");
+      }
+    }
+
+    return { required, optional };
   }
 
   createStatement(): AlterTableStatement {
-    switch (this.state.state) {
-      case "add_column":
-        return {
-          kind: "alter_table",
-          op: "add_column",
-          table: this.table,
-          columnList: this.state.columnList,
-        };
-
-      case "drop_column":
-        return {
-          kind: "alter_table",
-          op: "drop_column",
-          table: this.table,
-          columnNames: this.state.columnNames,
-        };
-
-      case "rename_column":
-        return {
-          kind: "alter_table",
-          op: "rename_column",
-          table: this.table,
-          from: this.state.from,
-          to: this.state.to,
-        };
-
-      case "modify_column":
-        return {
-          kind: "alter_table",
-          op: "modify_column",
-          table: this.table,
-          columnList: this.state.columnList,
-        };
-
-      case "add_constraint":
-        if (!this.state.constraint) {
-          throw new Error(
-            "Cannot create AlterTableStatement: constraint not fully defined",
-          );
-        }
-        return {
-          kind: "alter_table",
-          op: "add_constraint",
-          table: this.table,
-          constraint: this.state.constraint,
-        };
-
-      case "add_constraint_references":
-        if (!this.state.constraint) {
-          throw new Error(
-            "Cannot create AlterTableStatement: constraint not fully defined",
-          );
-        }
-        return {
-          kind: "alter_table",
-          op: "add_constraint",
-          table: this.table,
-          constraint: this.state.constraint,
-        };
-
-      case "drop_primary_key":
-        return {
-          kind: "alter_table",
-          op: "drop_primary_key",
-          table: this.table,
-        };
-
-      case "drop_constraint":
-        return {
-          kind: "alter_table",
-          op: "drop_constraint",
-          table: this.table,
-          constraintName: this.state.constraintName,
-        };
-
-      default:
-        throw new Error("Incomplete ALTER TABLE statement");
+    if (this.operations.length < 1) {
+      throw new Error(`No operations specified in ALTER TABLE statement`);
     }
+
+    return {
+      kind: "alter_table",
+      table: this.table,
+      operations: [...this.operations],
+    };
   }
 }

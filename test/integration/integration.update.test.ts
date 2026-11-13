@@ -44,7 +44,7 @@ describe("Integration::update", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         "index": 0,
         "values": [1, "Bob"],
@@ -94,7 +94,7 @@ describe("Integration::update", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1, "Alice"],
@@ -302,7 +302,7 @@ describe("Integration::update", () => {
       .from("Posts")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1, 2],
@@ -341,7 +341,7 @@ describe("Integration::update", () => {
 
     const results = sql.select("*").from("Users").execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       { index: 0, values: [2, "A"] },
       { index: 1, values: [1, "B"] },
     ]);
@@ -375,7 +375,7 @@ describe("Integration::update", () => {
 
     const results = sql.select("*").from("Users").execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       { index: 0, values: [2, "A"] },
       { index: 1, values: [3, "B"] },
     ]);
@@ -501,7 +501,7 @@ describe("Integration::update", () => {
         .from("Users")
         .execute();
 
-    expect(users[0].rows).toEqual([
+    expect(users!.rows).toEqual([
       {
         "index": 0,
         "values": [20],
@@ -552,7 +552,7 @@ describe("Integration::update", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1, "Anonymous"],
@@ -598,7 +598,7 @@ describe("Integration::update", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1, null],
@@ -684,7 +684,7 @@ describe("Integration::update", () => {
       .from("Users")
       .execute();
 
-    const value = results[0].rows[0].values[1];
+    const value = results!.rows[0].values[1];
 
     expect(typeof value).toBe("string");
 
@@ -732,9 +732,41 @@ describe("Integration::update", () => {
       .from("Users")
       .execute();
 
-    const value = results[0].rows[0].values[1];
+    const value = results!.rows[0].values[1];
 
     expect(typeof value).toBe("string");
     expect(Number.isNaN(Date.parse(value as string))).toBe(false);
+  });
+
+  it("rejects duplicate column assignments", () => {
+    const sql = createTestPostgresSql();
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
+    sql.createTable(...createTableTestSpec("Users", {
+      Id: {
+        type: SQL_DECIMAL,
+        nullable: false,
+        primaryKey: true,
+      },
+      Name: {
+        type: SQL_VARCHAR,
+        nullable: false,
+      },
+    })).execute();
+
+    sql.insertInto("Users", ["Id", "Name"])
+      .values([[1, "Alice"]])
+      .execute();
+
+    expect(() => {
+      sql.update("Users")
+        .set({
+          Name: "Bob",
+          name: "Charlie",
+        })
+        .execute();
+    }).toThrow();
   });
 });

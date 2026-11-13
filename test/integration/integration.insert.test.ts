@@ -239,7 +239,7 @@ describe("Integration::insert", () => {
     }).not.toThrow();
 
     expect(
-      sql.select("*").from("Employees").execute()[0].rows
+      sql.select("*").from("Employees").execute()!.rows
     ).toEqual([
       { index: 0, values: [1, 2] },
       { index: 1, values: [2, 1] },
@@ -275,7 +275,7 @@ describe("Integration::insert", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1, "Anonymous"],
@@ -314,7 +314,7 @@ describe("Integration::insert", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1, "Anonymous"],
@@ -352,7 +352,7 @@ describe("Integration::insert", () => {
       .from("Users")
       .execute();
 
-    const value = results[0].rows[0].values[1];
+    const value = results!.rows[0].values[1];
 
     expect(typeof value).toBe("string");
     expect(value).toMatch(
@@ -390,7 +390,7 @@ describe("Integration::insert", () => {
       .from("Users")
       .execute();
 
-    const value = results[0].rows[0].values[1];
+    const value = results!.rows[0].values[1];
 
     expect(typeof value).toBe("string");
     expect(value).toMatch(
@@ -465,7 +465,7 @@ describe("Integration::insert", () => {
       .from("Users")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1, "Alice"],
@@ -534,7 +534,7 @@ describe("Integration::insertSelect", () => {
       .from("Destination")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1, "Alice"],
@@ -601,7 +601,7 @@ describe("Integration::insertSelect", () => {
       .from("Destination")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1, "Alice"],
@@ -672,7 +672,7 @@ describe("Integration::insertSelect", () => {
       .from("Destination")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [2, "Bob"],
@@ -856,7 +856,7 @@ describe("Integration::insertSelect", () => {
       .from("Destination")
       .execute();
 
-    expect(results[0].rows).toEqual([
+    expect(results!.rows).toEqual([
       {
         index: 0,
         values: [1, "Alice"],
@@ -937,9 +937,124 @@ describe("Integration::insertSelect", () => {
         .execute(),
     ).not.toThrow();
 
-    const result = sql.select("*").from("Destination").execute();
+    const results = sql.select("*").from("Destination").execute();
 
-    expect(result[0].rows.map((row) => row.values))
+    expect(results!.rows.map((row) => row.values))
       .toEqual([[1], [2]]);
+  });
+
+  it("inserts a row using DEFAULT VALUES", () => {
+    const sql = createTestPostgresSql();
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
+    sql.createTable(...createTableTestSpec("Users", {
+      Id: {
+        type: SQL_DECIMAL,
+        nullable: false,
+        primaryKey: true,
+        defaultValue: 1,
+      },
+      Name: {
+        type: SQL_VARCHAR,
+        nullable: false,
+        defaultValue: "Anonymous",
+      },
+    })).execute();
+
+    sql.insertInto(table("Users")).defaultValues().execute();
+
+    const result = sql
+      .select("*")
+      .from("Users")
+      .fetch();
+
+    expect(result.rows).toEqual([
+      {
+        index: 0,
+        values: [1, "Anonymous"],
+      },
+    ]);
+  });
+
+  it("uses NULL for nullable columns without an explicit default in DEFAULT VALUES", () => {
+    const sql = createTestPostgresSql();
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
+    sql.createTable(...createTableTestSpec("Users", {
+      Id: {
+        type: SQL_DECIMAL,
+        nullable: false,
+        primaryKey: true,
+        defaultValue: 1,
+      },
+      Name: {
+        type: SQL_VARCHAR,
+        nullable: true,
+      },
+    })).execute();
+
+    sql.insertInto("Users").defaultValues().execute();
+
+    const result = sql.select("*").from("Users").fetch();
+
+    expect(result.rows).toEqual([
+      {
+        index: 0,
+        values: [1, null],
+      },
+    ]);
+  });
+
+  it("rejects DEFAULT VALUES when a non-nullable column has no default", () => {
+    const sql = createTestPostgresSql();
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
+    sql.createTable(...createTableTestSpec("Users", {
+      Id: {
+        type: SQL_DECIMAL,
+        nullable: false,
+        primaryKey: true,
+        defaultValue: 1,
+      },
+      Name: {
+        type: SQL_VARCHAR,
+        nullable: false,
+      },
+    })).execute();
+
+    expect(() => {
+      sql.insertInto("Users").defaultValues().execute();
+    }).toThrow();
+  });
+
+  it("rejects duplicate target columns after identifier normalization", () => {
+    const sql = createTestPostgresSql();
+
+    sql.createDatabase("DB1").execute();
+    sql.useDatabase("DB1").execute();
+
+    sql.createTable(...createTableTestSpec("Users", {
+      Id: {
+        type: SQL_DECIMAL,
+        nullable: false,
+        primaryKey: true,
+      },
+      Name: {
+        type: SQL_VARCHAR,
+        nullable: false,
+      },
+    })).execute();
+
+    expect(() => {
+      sql.insertInto("Users", ["Name", "name"])
+        .values([["Alice", "Bob"]])
+        .execute();
+    }).toThrow(/duplicate column/i);
   });
 });

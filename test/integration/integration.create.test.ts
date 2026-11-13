@@ -50,7 +50,7 @@ describe("Integration::create", () => {
         .from("ActiveUsers")
         .execute();
 
-      expect(result[0].rows).toEqual([
+      expect(result!.rows).toEqual([
         {
           "index": 0,
           "values": [1, "Alice"],
@@ -113,7 +113,7 @@ describe("Integration::create", () => {
         .from("UsersCopy")
         .execute();
 
-      expect(result[0].rows).toEqual([
+      expect(result!.rows).toEqual([
         {
           index: 0,
           values: [1, "Alice"],
@@ -170,7 +170,7 @@ describe("Integration::create", () => {
         .from("UsersCopy")
         .execute();
 
-      expect(result[0].rows).toEqual([
+      expect(result!.rows).toEqual([
         {
           index: 0,
           values: [1, "Alice"],
@@ -264,7 +264,7 @@ describe("Integration::create", () => {
         .from("UsersCopy")
         .execute();
 
-      expect(result[0].rows).toEqual([]);
+      expect(result!.rows).toEqual([]);
     });
 
     it("rejects a CTAS column list whose count does not match the query", () => {
@@ -355,7 +355,7 @@ describe("Integration::create", () => {
         .from("UsersCopy")
         .execute();
 
-      expect(result[0].rows).toEqual([
+      expect(result!.rows).toEqual([
         {
           index: 0,
           values: [1, "Alice"],
@@ -412,7 +412,7 @@ describe("Integration::create", () => {
         .from("UsersCopy")
         .execute();
 
-      expect(result[0].rows).toEqual([
+      expect(result!.rows).toEqual([
         {
           index: 0,
           values: [1, "Alice"],
@@ -479,7 +479,7 @@ describe("Integration::create", () => {
         .from("UsersCopy")
         .execute();
 
-      expect(result[0].rows).toEqual([
+      expect(result!.rows).toEqual([
         {
           index: 0,
           values: [1, "Alice"],
@@ -546,7 +546,7 @@ describe("Integration::create", () => {
         .from("UsersCopy")
         .execute();
 
-      expect(result[0].rows).toEqual([
+      expect(result!.rows).toEqual([
         {
           index: 0,
           values: [1, "Alice"],
@@ -594,7 +594,7 @@ describe("Integration::create", () => {
         .from("UsersCopy")
         .execute();
 
-      expect(result[0].rows).toEqual([]);
+      expect(result!.rows).toEqual([]);
     });
 
     it("uses the column list order as the destination column order", () => {
@@ -652,7 +652,7 @@ describe("Integration::create", () => {
         .from("UsersCopy")
         .execute();
 
-      expect(result[0].rows).toEqual([
+      expect(result!.rows).toEqual([
         {
           index: 0,
           values: ["Alice", 1],
@@ -722,7 +722,7 @@ describe("Integration::create", () => {
         .from("UsersCopy")
         .execute();
 
-      expect(result[0].rows).toEqual([
+      expect(result!.rows).toEqual([
         {
           index: 0,
           values: [1, "Alice"],

@@ -15,6 +15,7 @@ export class RuleResolver {
     K extends keyof (typeof ENGINE_RULES)[D],
   >(domain: D, rule: K): (typeof ENGINE_RULES)[D][K]["engineDefault"] {
     const cacheKey = `${domain}.${String(rule)}`;
+
     if (this.cache.has(cacheKey)) {
       return this.cache.get(
         cacheKey,
@@ -23,15 +24,26 @@ export class RuleResolver {
 
     const spec = ENGINE_RULES[domain][rule];
 
-    const value: typeof spec.engineDefault =
-      spec.dialectStrict?.(this.dialect) ??
-      (
-        this.policy?.[domain] as Record<typeof rule, typeof spec.engineDefault>
-      )?.[rule] ??
-      spec.dialectDefault?.(this.dialect) ??
-      spec.engineDefault;
+    const dialectStrict = spec.dialectStrict?.(this.dialect);
+
+    const policyValue = (
+      this.policy?.[domain] as
+        Record<typeof rule, typeof spec.engineDefault> | undefined
+    )?.[rule];
+
+    const dialectDefault = spec.dialectDefault?.(this.dialect);
+
+    const value =
+      dialectStrict !== undefined
+        ? dialectStrict
+        : policyValue !== undefined
+          ? policyValue
+          : dialectDefault !== undefined
+            ? dialectDefault
+            : spec.engineDefault;
 
     this.cache.set(cacheKey, value);
+
     return value;
   }
 

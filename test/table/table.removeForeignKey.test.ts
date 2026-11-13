@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
-  addForeignKeyByName,
   buildTable,
   buildTableWithForeignKey,
+  createColumnTestSpec,
+  createForeignKeyTestSpec_Table,
 } from '../utils/buildSchema.js';
 
 describe('Table::removeForeignKey', () => {
@@ -62,13 +63,13 @@ describe('Table::removeForeignKey', () => {
     }).toThrow();
   });
 
-
   it('preserves unrelated foreign keys during foreign key removal', () => {
-    const table = addForeignKeyByName(buildTableWithForeignKey(), {
+    const table = buildTableWithForeignKey()
+      .createForeignKey(createForeignKeyTestSpec_Table({
         name: "FK2",
         columns: ["c1"],
-        reverseIndex: "ri",
-      });
+        //reverseIndex: "ri",
+      }));
 
     const updated =
       table.removeForeignKey(
@@ -84,4 +85,21 @@ describe('Table::removeForeignKey', () => {
     ).toBeDefined();
   });
 
+  it('removes an internal reverse index when removing the foreign key', () => {
+    const table = buildTable()
+      .createColumn(createColumnTestSpec({
+        name: "c1",
+      }));
+
+    const tableWithFk = table.createForeignKey(createForeignKeyTestSpec_Table({
+      name: "FK1",
+      columns: ["c1"],
+      reverseIndex: "ri",
+    }));
+
+    const updated = tableWithFk.removeForeignKey("FK1");
+
+    expect(updated.foreignKeys.getByName("FK1")).toBeUndefined();
+    expect(updated.indexes.getByName("ri")).toBeUndefined();
+  });
 });

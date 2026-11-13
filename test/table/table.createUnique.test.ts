@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { buildTable, createColumnTestSpec } from '../utils/buildSchema.js';
+import { SQL_VARCHAR } from '../../src/types/SqlType.js';
 
 describe("Table::createUnique", () => {
   it("adds a unique constraint to the table", () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Email",
-        type: String,
+        type: SQL_VARCHAR,
         nullable: false,
       }))
       .createIndex({
@@ -17,8 +18,7 @@ describe("Table::createUnique", () => {
 
     const updated = table.createUnique({
       name: "UQ_Email",
-      indexName: "UQ_Email",
-      ownsIndex: false,
+      using: "UQ_Email",
     });
 
     expect(
@@ -30,7 +30,7 @@ describe("Table::createUnique", () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Email",
-        type: String,
+        type: SQL_VARCHAR,
         nullable: false,
       }))
       .createIndex({
@@ -41,8 +41,7 @@ describe("Table::createUnique", () => {
 
     const updated = table.createUnique({
       name: "UQ_Email",
-      indexName: "UQ_Email",
-      ownsIndex: false,
+      using: "UQ_Email",
     });
 
     expect(() => {
@@ -58,15 +57,14 @@ describe("Table::createUnique", () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Email",
-        type: String,
+        type: SQL_VARCHAR,
         nullable: false,
       }));
 
     expect(() => {
       table.createUnique({
         name: "UQ_Email",
-        indexName: "MissingIndex",
-        ownsIndex: false,
+        using: "MissingIndex",
       });
     }).toThrow();
   });
@@ -75,7 +73,7 @@ describe("Table::createUnique", () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Email",
-        type: String,
+        type: SQL_VARCHAR,
         nullable: false,
       }))
       .createIndex({
@@ -87,8 +85,7 @@ describe("Table::createUnique", () => {
     expect(() => {
       table.createUnique({
         name: "UQ_Email",
-        indexName: "IDX_Email",
-        ownsIndex: false,
+        using: "IDX_Email",
       });
     }).toThrow();
   });
@@ -97,7 +94,7 @@ describe("Table::createUnique", () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Email",
-        type: String,
+        type: SQL_VARCHAR,
         nullable: false,
       }))
       .createIndex({
@@ -109,8 +106,7 @@ describe("Table::createUnique", () => {
     expect(() => {
       table.createUnique({
         name: "UQ_Email",
-        indexName: "UQ_Email",
-        ownsIndex: false,
+        using: "UQ_Email",
       });
     }).not.toThrow();
   });
@@ -119,12 +115,12 @@ describe("Table::createUnique", () => {
     const table = buildTable()
       .createColumn(createColumnTestSpec({
         name: "Id",
-        type: Number,
+        type: SQL_VARCHAR,
         nullable: false,
       }))
       .createColumn(createColumnTestSpec({
         name: "Email",
-        type: String,
+        type: SQL_VARCHAR,
         nullable: false,
       }))
       .createIndex({
@@ -134,7 +130,7 @@ describe("Table::createUnique", () => {
       })
       .createPrimaryKey({
         name: "PK_Test",
-        columns: ["Id"],
+        using: "PK_Test",
       })
       .createIndex({
         name: "UQ_Email",
@@ -145,8 +141,7 @@ describe("Table::createUnique", () => {
     expect(() => {
       table.createUnique({
         name: "PK_Test",
-        indexName: "UQ_Email",
-        ownsIndex: false,
+        using: "UQ_Email",
       });
     }).toThrow();
   });

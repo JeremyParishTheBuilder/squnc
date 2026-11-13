@@ -14,11 +14,7 @@ export class SchemaBuilder {
 
       const value = result.value;
 
-      if (
-        value === null ||
-        typeof value !== "object" ||
-        Array.isArray(value)
-      ) {
+      if (value === null || typeof value !== "object" || Array.isArray(value)) {
         continue;
       }
 
@@ -37,9 +33,7 @@ export class SchemaBuilder {
     }
 
     if (Array.isArray(value)) {
-      throw new Error(
-        "An array must be observed as a child table.",
-      );
+      throw new Error("An array must be observed as a child table.");
     }
 
     const table = parentTableName
@@ -60,10 +54,7 @@ export class SchemaBuilder {
         const childPath = [...path, key];
 
         if (Array.isArray(child)) {
-          const childTableName = [
-            tableName,
-            ...childPath,
-          ].join("__");
+          const childTableName = [tableName, ...childPath].join("__");
 
           this.schema.getOrCreateChildTable(
             childTableName,
@@ -83,14 +74,8 @@ export class SchemaBuilder {
           continue;
         }
 
-        if (
-          child !== null &&
-          typeof child === "object"
-        ) {
-          visitObject(
-            child as Record<string, unknown>,
-            childPath,
-          );
+        if (child !== null && typeof child === "object") {
+          visitObject(child as Record<string, unknown>, childPath);
 
           continue;
         }

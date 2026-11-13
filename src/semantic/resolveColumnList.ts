@@ -1,4 +1,4 @@
-import { type Column } from "../relational/Column.js";
+import { type Column, type ColumnId } from "../relational/Column.js";
 import { type Table } from "../relational/Table.js";
 
 export function resolveTargetColumns(
@@ -12,19 +12,19 @@ export function resolveTargetColumns(
     return table.getColumnsInOrder();
   }
 
-  const seen = new Set<string>();
+  const columnsSeen = new Set<ColumnId>();
   const result: Column[] = [];
 
   for (const name of statementColumns) {
-    const normalized = name.toLowerCase();
+    const column = table.columns.requireByName(name);
 
-    if (seen.has(normalized)) {
+    if (columnsSeen.has(column.id)) {
       throw new Error(`Duplicate column: ${name}`);
     }
 
-    seen.add(normalized);
+    columnsSeen.add(column.id);
 
-    result.push(table.columns.requireByName(name));
+    result.push(column);
   }
 
   return result;

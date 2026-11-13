@@ -7,20 +7,13 @@ export class Unique extends Immutable {
   public readonly id: UniqueId;
   public readonly name: string;
   public readonly index: IndexId;
-  public readonly ownsIndex: boolean;
 
-  protected constructor(spec: {
-    id: UniqueId;
-    name: string;
-    index: IndexId;
-    ownsIndex: boolean;
-  }) {
+  protected constructor(spec: { id: UniqueId; name: string; index: IndexId }) {
     super();
 
     this.id = spec.id;
     this.name = spec.name;
     this.index = spec.index;
-    this.ownsIndex = spec.ownsIndex;
 
     this.validate();
     this.seal();
@@ -31,7 +24,6 @@ export class Unique extends Immutable {
     id: UniqueId;
     name: string;
     index: IndexId;
-    ownsIndex: boolean;
   }): Unique {
     return new this(spec);
   }

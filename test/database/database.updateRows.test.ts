@@ -22,12 +22,7 @@ describe('Database::updateRow', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Users",
-        columns: ["roleId"],
-        unique: false,
-      });;
+      }));
 
     users = users.addRows([[1]]);
 
@@ -77,12 +72,7 @@ describe('Database::updateRow', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Users",
-        columns: ["roleId"],
-        unique: false,
-      });;
+      }));
 
     users = users.addRows([[1]]);
 
@@ -126,12 +116,7 @@ describe('Database::updateRow', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Users",
-        columns: ["roleId"],
-        unique: false,
-      });;
+      }));
 
     users = users.addRows([[1]]);
 
@@ -175,12 +160,7 @@ describe('Database::updateRow', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Users",
-        columns: ["roleId"],
-        unique: false,
-      });
+      }));
 
     const db = buildDatabase()
       .addTable(roles)
@@ -222,12 +202,7 @@ describe('Database::updateRow', () => {
         name: "PK_Employees",
         columns: ["id"],
         unique: true,
-      })
-      .createIndex({
-        name: "FKRI_Employees",
-        columns: ["managerId"],
-        unique: false,
-      });;
+      });
 
     employees = employees.addRows([[1, null],[2, 1]]);
 
@@ -270,11 +245,6 @@ describe('Database::updateRow', () => {
         name: "PK_Employees",
         columns: ["id"],
         unique: true,
-      })
-      .createIndex({
-        name: "FKR_Employees",
-        columns: ["managerId"],
-        unique: false,
       });
 
     employees = employees.addRows([[1, null]]);
@@ -347,12 +317,7 @@ describe('Database::updateRow', () => {
       .createColumn(createColumnTestSpec({
         name: "roleId",
         type: SQL_DECIMAL,
-      }))
-      .createIndex({
-        name: "FKRI_Users",
-        columns: ["roleId"],
-        unique: false,
-      });
+      }));
 
     users = users.addRows([[1],[2]]);
 

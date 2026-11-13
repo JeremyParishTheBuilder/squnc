@@ -22,6 +22,7 @@ export class Index extends ColumnBoundImmutable {
   public readonly unique: boolean;
   public readonly nullsDistinct: boolean;
   public readonly predicate?: Predicate;
+  public readonly internal: boolean;
 
   public readonly id: IndexId;
   public readonly map: Map<string, number[]> = new Map();
@@ -45,6 +46,8 @@ export class Index extends ColumnBoundImmutable {
     this.nullsDistinct = spec.nullsDistinct ?? true;
     this.predicate = spec.predicate;
 
+    this.internal = spec.internal ?? false;
+
     this.id = spec.id;
 
     this.validate();
@@ -63,6 +66,7 @@ export class Index extends ColumnBoundImmutable {
     unique?: boolean;
     nullsDistinct?: boolean;
     predicate?: Predicate;
+    internal?: boolean;
   }): Index {
     return new this(spec);
   }
@@ -105,6 +109,12 @@ export class Index extends ColumnBoundImmutable {
   public rename(newName: string): Index {
     return this.with({
       name: newName,
+    } as Partial<this>);
+  }
+
+  public publish(): this {
+    return this.with({
+      internal: false,
     } as Partial<this>);
   }
 

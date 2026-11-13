@@ -14,12 +14,14 @@ export type TabularExpressionInput =
 export abstract class TabularExpressionReferencer implements StatementBuilder {
   protected source?: TabularExpressionProjection;
 
-  from(source: TabularExpressionInput) {
+  from(source: TabularExpressionInput): this {
     if (this.source) {
       throw new Error("Source already provided");
     }
 
     this.source = asTabularExpressionProjection(source);
+
+    return this;
   }
 
   innerJoin(right: TabularExpressionInput): InnerJoinBuilder {
@@ -43,7 +45,7 @@ export abstract class TabularExpressionReferencer implements StatementBuilder {
     return this;
   }
 
-  as(alias: string) {
+  as(alias: string): this {
     if (!this.source) {
       throw new Error(`No Source`);
     }
@@ -55,6 +57,8 @@ export abstract class TabularExpressionReferencer implements StatementBuilder {
       source: this.source.source,
       alias,
     };
+
+    return this;
   }
   assertSourceNotProjected(): void {
     if (!this.source) {

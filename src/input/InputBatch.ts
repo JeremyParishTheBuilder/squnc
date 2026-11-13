@@ -39,9 +39,21 @@ import { JoinBuilder } from "../statements/dql/join/JoinStatement.js";
 import type { QueryProjection } from "../ast/query/QueryProjection.js";
 import type { TableReferenceNode } from "../ast/tabular/TableReferenceNode.js";
 import { RollbackBuilder } from "../statements/session/RollbackStatement.js";
+import { ForeignKeyBuilder } from "../statements/ddl/ForeignKeyBuilder.js";
+import { AddConstraintBuilder } from "../statements/ddl/AddConstraintBuilder.js";
+import { RenameColumnBuilder } from "../statements/ddl/RenameColumnBuilder.js";
+import { RenameConstraintBuilder } from "../statements/ddl/RenameConstraintBuilder.js";
+import { AlterColumnBuilder } from "../statements/ddl/AlterColumnBuilder.js";
+import type { SqlType } from "../types/SqlType.js";
+import type { ColumnValue } from "../types/ColumnValue.js";
+import type { IndexSpec } from "../relational/Index.js";
+import { RenameIndexBuilder } from "../statements/ddl/RenameIndexBuilder.js";
+import {
+  CreateIndexBuilder,
+  type IndexColumnArg,
+} from "../statements/ddl/CreateIndexBuilder.js";
 
 export abstract class InputBatch {
-  private statements: Statement[] = [];
   private currentBuilder: StatementBuilder | null = null;
 
   static statementStarters = [
@@ -56,7 +68,8 @@ export abstract class InputBatch {
     "select",
     "update",
     "deleteFrom",
-    "values",
+    "createIndex",
+    "createUniqueIndex",
   ];
 
   constructor(
@@ -69,57 +82,30 @@ export abstract class InputBatch {
   protected abstract createInputBatch(): this;
   protected abstract createInnerInputBatch(): this;
 
-  private addStatement(stmt: Statement) {
-    this.statements.push(stmt);
-  }
-
-  private finalizeStatement() {
+  private finalizeStatement(): Statement {
     if (!this.currentBuilder) {
-      return;
+      throw new Error(`No current statement builder selected`);
     }
 
-    this.addStatement(this.currentBuilder.createStatement());
+    const statement = this.currentBuilder.createStatement();
+
     this.currentBuilder = null;
-    return;
+
+    return statement;
   }
 
-  private getAllowedCalls(): {
-    allowed: string[];
-    required: string[];
-  } {
-    const allowed: string[] = [];
-    const required: string[] = [];
-
-    if (this.currentBuilder) {
-      const next = this.currentBuilder.getNextCalls();
-
-      allowed.push(...next.required, ...next.optional);
-      required.push(...next.required);
-
-      if (next.required.length > 0) {
-        return { allowed, required };
-      }
+  private getAllowedCalls(): string[] {
+    if (!this.currentBuilder) {
+      return InputBatch.statementStarters;
     }
 
-    return {
-      allowed,
-      required,
-    };
+    const next = this.currentBuilder.getNextCalls();
+
+    return [...next.required, ...next.optional];
   }
 
   private assertAllowed(canonical: string, fragment: string) {
-    if (!this.currentBuilder) {
-      if (!InputBatch.statementStarters.includes(canonical)) {
-        throw new Error(
-          `'${fragment}' cannot be used outside of a statement (or must start a statement)`,
-        );
-      }
-      return;
-    }
-
-    const { allowed } = this.getAllowedCalls();
-
-    if (!allowed.includes(canonical)) {
+    if (!this.getAllowedCalls().includes(canonical)) {
       throw new Error(`'${fragment}' is not valid here`);
     }
   }
@@ -128,33 +114,25 @@ export abstract class InputBatch {
 
   protected begin(fragment: string = "BEGIN") {
     this.assertAllowed("begin", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new BeginBuilder();
-    this.finalizeStatement();
     return this;
   }
 
   protected commit(fragment: string = "COMMIT") {
     this.assertAllowed("commit", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new CommitBuilder();
-    this.finalizeStatement();
     return this;
   }
 
   protected rollback(fragment: string = "ROLLBACK") {
     this.assertAllowed("rollback", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new RollbackBuilder();
-    this.finalizeStatement();
     return this;
   }
 
   protected useDatabase(dbName: string, fragment: string = "USE DATABASE") {
     this.assertAllowed("useDatabase", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new UseDatabaseBuilder(dbName);
-    this.finalizeStatement();
     return this;
   }
 
@@ -163,9 +141,7 @@ export abstract class InputBatch {
     fragment: string = "CREATE DATABASE",
   ) {
     this.assertAllowed("createDatabase", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new CreateDatabaseBuilder(dbName);
-    this.finalizeStatement();
     return this;
   }
 
@@ -176,7 +152,6 @@ export abstract class InputBatch {
     fragment: string = "CREATE TABLE",
   ) {
     this.assertAllowed("createTable", fragment);
-    this.finalizeStatement();
 
     this.currentBuilder = new CreateTableBuilder(
       name,
@@ -195,7 +170,7 @@ export abstract class InputBatch {
         throw new Error(`Cannot use '${fragment}' as a tabular alias here`);
       }
 
-      this.currentBuilder.as(input);
+      this.currentBuilder = this.currentBuilder.as(input);
       return this;
     }
 
@@ -205,7 +180,7 @@ export abstract class InputBatch {
       );
     }
 
-    this.currentBuilder.as(input.asQueryStatement());
+    this.currentBuilder = this.currentBuilder.as(input.asQueryStatement());
     return this;
   }
 
@@ -214,7 +189,6 @@ export abstract class InputBatch {
     columns: string[],
     fragment: string = "INSERT INTO",
   ) {
-    this.finalizeStatement();
     this.assertAllowed("insertInto", fragment);
 
     this.currentBuilder = new InsertIntoBuilder(table, columns);
@@ -225,15 +199,22 @@ export abstract class InputBatch {
   protected values(data: InsertValuesInput[][], fragment: string = "VALUES") {
     this.assertAllowed("values", fragment);
 
-    if (
-      !(this.currentBuilder instanceof InsertIntoBuilder) // &&
-      //!(this.currentBuilder instanceof CreateTableBuilder)
-      // TODO - add to create table
-    ) {
+    if (!(this.currentBuilder instanceof InsertIntoBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of InsertInto`);
     }
 
-    this.currentBuilder.values(data);
+    this.currentBuilder = this.currentBuilder.values(data);
+    return this;
+  }
+
+  protected defaultValues(fragment: string = "DEFAULT VALUES") {
+    this.assertAllowed("defaultValues", fragment);
+
+    if (!(this.currentBuilder instanceof InsertIntoBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of InsertInto`);
+    }
+
+    this.currentBuilder = this.currentBuilder.defaultValues();
     return this;
   }
 
@@ -245,13 +226,12 @@ export abstract class InputBatch {
     ) {
       throw new Error(`Cannot call '${fragment}' outside of InsertInto`);
     }
-    this.currentBuilder.returning(cols);
+    this.currentBuilder = this.currentBuilder.returning(cols);
     return this;
   }
 
   protected update(table: string, fragment: string = "UPDATE") {
     this.assertAllowed("update", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new UpdateSetBuilder(table);
     return this;
   }
@@ -261,70 +241,180 @@ export abstract class InputBatch {
     if (!(this.currentBuilder instanceof UpdateSetBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of Update`);
     }
-    this.currentBuilder.set(data);
+    this.currentBuilder = this.currentBuilder.set(data);
     return this;
   }
 
   protected deleteFrom(table: string, fragment: string = "DELETE FROM") {
     this.assertAllowed("deleteFrom", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new DeleteFromBuilder(table);
     return this;
   }
 
   protected alterTable(name: string, fragment: string = "ALTER TABLE") {
     this.assertAllowed("alterTable", fragment);
-    this.finalizeStatement();
     this.currentBuilder = new AlterTableBuilder(name);
     return this;
   }
 
-  protected addColumn(
-    columnList: InlineColumnSpec[],
-    fragment: string = "ADD COLUMN",
-  ) {
-    this.assertAllowed("addColumn", fragment);
+  protected renameTo(name: string, fragment: string = "RENAME TO") {
+    this.assertAllowed("renameTo", fragment);
     if (!(this.currentBuilder instanceof AlterTableBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
     }
-    this.currentBuilder.addColumn(columnList);
+    this.currentBuilder = this.currentBuilder.renameTo(name);
+    return this;
+  }
+
+  protected addColumn(
+    columnOrList: InlineColumnSpec | InlineColumnSpec[],
+    fragment: string = "ADD COLUMN",
+  ) {
+    this.assertAllowed("addColumn", fragment);
+
+    if (!(this.currentBuilder instanceof AlterTableBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+
+    this.currentBuilder = this.currentBuilder.addColumn(columnOrList);
+
     return this;
   }
 
   protected dropColumn(
-    columnNames: string[],
+    nameOrNames: string | string[],
     fragment: string = "DROP COLUMN",
   ) {
     this.assertAllowed("dropColumn", fragment);
     if (!(this.currentBuilder instanceof AlterTableBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
     }
-    this.currentBuilder.dropColumn(columnNames);
+    this.currentBuilder = this.currentBuilder.dropColumn(nameOrNames);
     return this;
   }
 
-  protected renameColumn(
-    from: string,
-    to: string,
-    fragment: string = "RENAME COLUMN",
-  ) {
+  protected renameColumn(name: string, fragment: string = "RENAME COLUMN") {
     this.assertAllowed("renameColumn", fragment);
     if (!(this.currentBuilder instanceof AlterTableBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
     }
-    this.currentBuilder.renameColumn(from, to);
+    this.currentBuilder = this.currentBuilder.renameColumn(name);
     return this;
   }
 
-  protected alterColumn(
-    columnList: InlineColumnSpec[],
-    fragment: string = "ALTER COLUMN",
-  ) {
+  protected to(name: string, fragment: string = "TO") {
+    this.assertAllowed("to", fragment);
+    if (
+      !(this.currentBuilder instanceof RenameColumnBuilder) &&
+      !(this.currentBuilder instanceof RenameConstraintBuilder) &&
+      !(this.currentBuilder instanceof RenameIndexBuilder)
+    ) {
+      throw new Error(
+        `Cannot call '${fragment}' outside of Rename Column/Constriant`,
+      );
+    }
+    this.currentBuilder = this.currentBuilder.to(name);
+    return this;
+  }
+
+  protected alterColumn(name: string, fragment: string = "ALTER COLUMN") {
     this.assertAllowed("alterColumn", fragment);
     if (!(this.currentBuilder instanceof AlterTableBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
     }
-    this.currentBuilder.modifyColumn(columnList);
+    this.currentBuilder = this.currentBuilder.alterColumn(name);
+    return this;
+  }
+
+  protected setType(type: SqlType, fragment: string = "SET TYPE") {
+    this.assertAllowed("setType", fragment);
+    if (!(this.currentBuilder instanceof AlterColumnBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+    this.currentBuilder = this.currentBuilder.setType(type);
+    return this;
+  }
+
+  protected setDefault(value: ColumnValue, fragment: string = "SET DEFAULT") {
+    this.assertAllowed("setDefault", fragment);
+    if (!(this.currentBuilder instanceof AlterColumnBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+    this.currentBuilder = this.currentBuilder.setDefault(value);
+    return this;
+  }
+
+  protected dropDefault(fragment: string = "DROP DEFAULT") {
+    this.assertAllowed("dropDefault", fragment);
+    if (!(this.currentBuilder instanceof AlterColumnBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+    this.currentBuilder = this.currentBuilder.dropDefault();
+    return this;
+  }
+
+  protected setNotNull(fragment: string = "SET NOT NULL") {
+    this.assertAllowed("setNotNull", fragment);
+    if (!(this.currentBuilder instanceof AlterColumnBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+    this.currentBuilder = this.currentBuilder.setNotNull();
+    return this;
+  }
+
+  protected dropNotNull(fragment: string = "DROP NOT NULL") {
+    this.assertAllowed("dropNotNull", fragment);
+    if (!(this.currentBuilder instanceof AlterColumnBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+    this.currentBuilder = this.currentBuilder.dropNotNull();
+    return this;
+  }
+
+  protected dropConstraint(
+    nameOrNames: string | string[],
+    fragment: string = "DROP CONSTRAINT",
+  ) {
+    this.assertAllowed("dropConstraint", fragment);
+    if (!(this.currentBuilder instanceof AlterTableBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+    this.currentBuilder = this.currentBuilder.dropConstraint(nameOrNames);
+    return this;
+  }
+
+  protected dropIndex(name: string, fragment: string = "DROP INDEX") {
+    this.assertAllowed("dropIndex", fragment);
+
+    if (this.currentBuilder instanceof AlterTableBuilder) {
+      this.currentBuilder = this.currentBuilder.dropIndex(name);
+      //} else if (this.currentBuilder === undefined) {
+      //  this.currentBuilder = new DropIndexBuilder(name);  // TODO
+    } else {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+
+    return this;
+  }
+
+  protected renameIndex(name: string, fragment: string = "RENAME INDEX") {
+    this.assertAllowed("renameIndex", fragment);
+    if (!(this.currentBuilder instanceof AlterTableBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+    this.currentBuilder = this.currentBuilder.renameIndex(name);
+    return this;
+  }
+
+  protected renameConstraint(
+    name: string,
+    fragment: string = "RENAME CONSTRAINT",
+  ) {
+    this.assertAllowed("renameConstraint", fragment);
+    if (!(this.currentBuilder instanceof AlterTableBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+    this.currentBuilder = this.currentBuilder.renameConstraint(name);
     return this;
   }
 
@@ -333,34 +423,104 @@ export abstract class InputBatch {
     if (!(this.currentBuilder instanceof AlterTableBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
     }
-    this.currentBuilder.addConstraint(name);
+    this.currentBuilder = this.currentBuilder.addConstraint(name);
+    return this;
+  }
+
+  protected addIndex(indexSpec: IndexSpec, fragment: string = "ADD INDEX") {
+    this.assertAllowed("addIndex", fragment);
+    if (!(this.currentBuilder instanceof AlterTableBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+    this.currentBuilder = this.currentBuilder.addIndex(indexSpec);
+    return this;
+  }
+
+  protected createIndex(name: string, fragment: string = "CREATE INDEX") {
+    this.assertAllowed("createIndex", fragment);
+    this.currentBuilder = new CreateIndexBuilder(name, false);
+    return this;
+  }
+
+  protected createUniqueIndex(
+    name: string,
+    fragment: string = "CREATE UNIQUE INDEX",
+  ) {
+    this.assertAllowed("createUniqueIndex", fragment);
+    this.currentBuilder = new CreateIndexBuilder(name, true);
+    return this;
+  }
+
+  protected on(
+    arg1: string | PredicateNode,
+    arg2?: IndexColumnArg[],
+    fragment: string = "ON",
+  ) {
+    this.assertAllowed("on", fragment);
+
+    if (this.currentBuilder instanceof JoinBuilder) {
+      if (typeof arg1 === "string") {
+        throw new Error(`Invalid argument type for JOIN ... ON predicate`);
+      }
+      this.currentBuilder = this.currentBuilder.on(arg1);
+    } else if (this.currentBuilder instanceof CreateIndexBuilder) {
+      if (typeof arg1 !== "string" || arg2 === undefined) {
+        throw new Error(
+          `Invalid arguments for CREATE INDEX ... ON table, cols`,
+        );
+      }
+      this.currentBuilder = this.currentBuilder.on(arg1, arg2);
+    } else {
+      throw new Error(
+        `Cannot call '${fragment}' outside of JOIN | CREATE INDEX `,
+      );
+    }
+
+    return this;
+  }
+
+  protected dropPrimaryKey(fragment: string = "DROP PRIMARY KEY") {
+    this.assertAllowed("dropPrimaryKey", fragment);
+    if (!(this.currentBuilder instanceof AlterTableBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+    this.currentBuilder = this.currentBuilder.dropPrimaryKey();
+    return this;
+  }
+
+  protected primaryKey(columns: string[], fragment: string = "PRIMARY KEY") {
+    this.assertAllowed("primaryKey", fragment);
+    if (!(this.currentBuilder instanceof AddConstraintBuilder)) {
+      throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
+    }
+    this.currentBuilder = this.currentBuilder.primaryKey(columns);
     return this;
   }
 
   protected unique(columns: string[], fragment: string = "UNIQUE") {
     this.assertAllowed("unique", fragment);
-    if (!(this.currentBuilder instanceof AlterTableBuilder)) {
+    if (!(this.currentBuilder instanceof AddConstraintBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
     }
-    this.currentBuilder.unique(columns);
+    this.currentBuilder = this.currentBuilder.unique(columns);
     return this;
   }
 
   protected check(predicate: PredicateNode, fragment: string = "CHECK") {
     this.assertAllowed("check", fragment);
-    if (!(this.currentBuilder instanceof AlterTableBuilder)) {
+    if (!(this.currentBuilder instanceof AddConstraintBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
     }
-    this.currentBuilder.check(predicate);
+    this.currentBuilder = this.currentBuilder.check(predicate);
     return this;
   }
 
   protected foreignKey(columns: string[], fragment: string = "FOREIGN KEY") {
     this.assertAllowed("foreignKey", fragment);
-    if (!(this.currentBuilder instanceof AlterTableBuilder)) {
+    if (!(this.currentBuilder instanceof AddConstraintBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
     }
-    this.currentBuilder.foreignKey(columns);
+    this.currentBuilder = this.currentBuilder.foreignKey(columns);
     return this;
   }
 
@@ -370,10 +530,13 @@ export abstract class InputBatch {
     fragment: string = "REFERENCES",
   ) {
     this.assertAllowed("references", fragment);
-    if (!(this.currentBuilder instanceof AlterTableBuilder)) {
+    if (!(this.currentBuilder instanceof ForeignKeyBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
     }
-    this.currentBuilder.references(parentTable, parentColumns);
+    this.currentBuilder = this.currentBuilder.references(
+      parentTable,
+      parentColumns,
+    );
     return this;
   }
 
@@ -385,7 +548,7 @@ export abstract class InputBatch {
     if (!(this.currentBuilder instanceof AlterTableBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
     }
-    this.currentBuilder.onDelete(action);
+    this.currentBuilder = this.currentBuilder.onDelete(action);
     return this;
   }
 
@@ -397,7 +560,7 @@ export abstract class InputBatch {
     if (!(this.currentBuilder instanceof AlterTableBuilder)) {
       throw new Error(`Cannot call '${fragment}' outside of AlterTable`);
     }
-    this.currentBuilder.onUpdate(action);
+    this.currentBuilder = this.currentBuilder.onUpdate(action);
     return this;
   }
 
@@ -406,16 +569,18 @@ export abstract class InputBatch {
     fragment: string = "SELECT",
   ) {
     if (!isInputBatch(projectionOrQuery) && this.currentBuilder !== null) {
-      const newQueryInputCursor = this.createInnerInputBatch();
-      newQueryInputCursor.select(projectionOrQuery);
-      return newQueryInputCursor;
+      const inner = this.createInnerInputBatch();
+      inner.select(projectionOrQuery);
+      return inner;
     }
 
     this.assertAllowed("select", fragment);
 
     if (isInputBatch(projectionOrQuery)) {
       if (this.currentBuilder instanceof InsertIntoBuilder) {
-        this.currentBuilder.select(projectionOrQuery.asQueryStatement());
+        this.currentBuilder = this.currentBuilder.select(
+          projectionOrQuery.asQueryStatement(),
+        );
         return this;
       }
 
@@ -450,7 +615,7 @@ export abstract class InputBatch {
 
     const source = isInputBatch(input) ? input.asQueryStatement() : input;
 
-    this.currentBuilder.from(source);
+    this.currentBuilder = this.currentBuilder.from(source);
     return this;
   }
 
@@ -472,16 +637,6 @@ export abstract class InputBatch {
     return this;
   }
 
-  protected on(predicate: PredicateNode, fragment: string = "ON") {
-    this.assertAllowed("on", fragment);
-    if (!(this.currentBuilder instanceof JoinBuilder)) {
-      throw new Error(`Cannot call '${fragment}' outside of Join`);
-    }
-
-    this.currentBuilder = this.currentBuilder.on(predicate);
-    return this;
-  }
-
   protected where(predicate: PredicateNode, fragment: string = "WHERE") {
     this.assertAllowed("where", fragment);
     if (
@@ -493,7 +648,7 @@ export abstract class InputBatch {
         `Cannot call '${fragment}' outside of SELECT/UPDATE/DELETE`,
       );
     }
-    this.currentBuilder.where(predicate);
+    this.currentBuilder = this.currentBuilder.where(predicate);
     return this;
   }
 
@@ -511,26 +666,16 @@ export abstract class InputBatch {
     return GETDATE;
   }
 
-  private tryAsStatement(
-    assertNotInner: boolean = true,
-  ): Statement | undefined {
+  private tryAsStatement(assertNotInner: boolean = true): Statement {
     if (assertNotInner && this.isInner) {
       throw new Error(`Not allowed to finalize inner statement`);
     }
 
-    this.finalizeStatement();
-
-    return this.statements.pop();
+    return this.finalizeStatement();
   }
 
   public asStatement(): Statement {
-    const statement = this.tryAsStatement();
-
-    if (statement === undefined) {
-      throw new Error("No statement is available.");
-    }
-
-    return statement;
+    return this.tryAsStatement();
   }
 
   public asConstraintStatement(): ConstraintStatement {
@@ -555,23 +700,18 @@ export abstract class InputBatch {
     return statement;
   }
 
-  execute(): QueryResult[] {
-    this.finalizeStatement();
+  execute(): QueryResult | void {
+    return this.executeStatement(this.finalizeStatement());
+  }
 
-    const resultIterators: QueryResult[] = [];
+  fetch(): QueryResult {
+    const result = this.executeStatement(this.finalizeStatement());
 
-    const statementsToExecute = [...this.statements];
-    this.statements = [];
-
-    for (const stmt of statementsToExecute) {
-      const result = this.executeStatement(stmt);
-
-      if (result !== undefined) {
-        resultIterators.push(result);
-      }
+    if (!result) {
+      throw new Error("Expected statement to produce a query result");
     }
 
-    return resultIterators;
+    return result;
   }
 }
 
@@ -580,8 +720,9 @@ function isConstraintStatement(
 ): statement is ConstraintStatement {
   return (
     statement?.kind === "alter_table" &&
-    statement.op === "add_constraint" &&
-    statement.constraint.kind !== CONSTRAINT_KIND.primaryKey
+    statement.operations.length === 1 &&
+    statement.operations[0].op === "add_constraint" &&
+    statement.operations[0].constraint.kind !== CONSTRAINT_KIND.primaryKey
   );
 }
 

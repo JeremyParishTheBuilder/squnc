@@ -14,7 +14,7 @@ import { ImportMapping } from "../mapping/import/oldTypes/ImportMapping.js";
 //   isNull,
 //   isNotNull,
 // } from "../mapping/dsl/predicate/functions.js";
-import { ImportRoot } from "../mapping/import/oldTypes/ImportRoot.js";
+//import { ImportRoot } from "../mapping/import/oldTypes/ImportRoot.js";
 //import { discovery, path } from "../mapping/import/dsl.js";
 import { DiscoveryRoot } from "../mapping/discovery/DiscoveryRoot.js";
 import { SQL_DECIMAL } from "../types/SqlType.js";
@@ -134,17 +134,17 @@ const sql: PostgresInputBatch = engine.input() as PostgresInputBatch;
 // };
 
 export function exampleChainRegistry_buildDatabase(
-  testRegistryDiscoveryRoot: DiscoveryRoot,
-  testRegistryImportMapping: ImportMapping,
+  _testRegistryDiscoveryRoot: DiscoveryRoot,
+  _testRegistryImportMapping: ImportMapping,
 ) {
   console.log("Building Example Database");
 
-  const testRegistryImportRoot = new ImportRoot({
-    discovery: testRegistryDiscoveryRoot,
-    mapping: testRegistryImportMapping,
-  });
+  // const testRegistryImportRoot = new ImportRoot({
+  //   discovery: testRegistryDiscoveryRoot,
+  //   mapping: testRegistryImportMapping,
+  // });
 
-  const importRoots: ImportRoot[] = [testRegistryImportRoot];
+  //const importRoots: ImportRoot[] = [testRegistryImportRoot];
 
   // const result = ImportPipeline.build({
   //   importRoots: importRoots,
@@ -175,7 +175,7 @@ export function exampleChainRegistry_buildDatabase(
   //   }
   // }
 
-  const chainResult = sql.select("*").from("Chains").execute()[0];
+  const chainResult = sql.select("*").from("Chains").execute();
   console.log("chainResult");
   console.log(chainResult);
 
@@ -183,15 +183,15 @@ export function exampleChainRegistry_buildDatabase(
   // console.log("logoURIsResult");
   // console.log(logoURIsResult);
 
-  const imagesResult = sql.select("*").from("Images").execute()[0];
+  const imagesResult = sql.select("*").from("Images").execute();
   console.log("imagesResult");
   console.log(imagesResult);
 
-  const feeTokens = sql.select("*").from("FeeTokens").execute()[0];
+  const feeTokens = sql.select("*").from("FeeTokens").execute();
   console.log("feeTokens");
   console.log(feeTokens);
 
-  const assets = sql.select("*").from("Assets").execute()[0];
+  const assets = sql.select("*").from("Assets").execute();
   console.log("assets");
   console.log(assets);
 
@@ -236,13 +236,13 @@ function createTestDatabase() {
     .execute();
   console.log("5");
   const results = sql.select("*").from("T1").execute();
-  console.log(results[0].rows[0]);
+  console.log(results!.rows[0]);
   sql
     .insertInto("T1")
     .values([[1], [sql.DEFAULT]])
     .execute();
   console.log("6");
   const rows2 = sql.select("*").from("T1").execute();
-  console.log(rows2[0]);
+  console.log(rows2);
   console.log("7");
 }

@@ -1,22 +1,20 @@
 import { type Action } from "./Action.js";
 import { type Databases } from "../relational/Databases.js";
-import type { SqlType } from "../types/SqlType.js";
 
-export class AlterColumnAction implements Action {
+export class AlterColumnSetNotNullAction implements Action {
   constructor(
     private dbName: string,
     private tableName: string,
     private columnName: string,
-    private newType: SqlType,
   ) {}
 
   apply(databases: Databases): Databases {
     const db = databases.requireByName(this.dbName);
 
-    const updatedDatabase = db.alterColumn(
-      this.tableName,
-      this.columnName,
-      this.newType,
+    const table = db.tables.requireByName(this.tableName);
+
+    const updatedDatabase = db.updateTable(
+      table.updateColumnNullable(this.columnName, false),
     );
 
     return databases.update(updatedDatabase);

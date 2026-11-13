@@ -5,34 +5,30 @@ import type { InlineColumnSpec } from "../../../relational/Column.js";
 import { SQL_VARCHAR } from "../../../types/SqlType.js";
 
 export const testRegistry_ImportRuleset = (sql: PostgresInputBatch) => {
-  return (
-    ImportRuleset.create({
-      name: "Chain Registry Test Import",
-    })
-      .withInstruction({
-        name: "Chain Directories",
-        description:
-          "Import all chain directories, which may be incomplete/stubs.",
-        statements: [
-          sql
-            .createTable("Chains", [
-              {
-                name: "chainDirectoryName",
-                type: SQL_VARCHAR,
-                nullable: false,
-              } as InlineColumnSpec,
-            ])
-            .asStatement(),
+  return ImportRuleset.create({
+    name: "Chain Registry Test Import",
+  }).withInstruction({
+    name: "Chain Directories",
+    description: "Import all chain directories, which may be incomplete/stubs.",
+    statements: [
+      sql
+        .createTable("Chains", [
+          {
+            name: "chainDirectoryName",
+            type: SQL_VARCHAR,
+            nullable: false,
+          } as InlineColumnSpec,
+        ])
+        .asStatement(),
 
+      sql
+        .insertInto("Chains", ["chainDirectoryName"])
+        .select(
           sql
-            .insertInto("Chains", ["chainDirectoryName"])
-            .select(
-              sql
-                .select([json_value(property("metadata"), "$.source.basename")])
-                .from("discovery.chainDirectory"),
-            )
-            .asStatement(),
-        ],
-      })
-  );
+            .select([json_value(property("metadata"), "$.source.basename")])
+            .from("discovery.chainDirectory"),
+        )
+        .asStatement(),
+    ],
+  });
 };
