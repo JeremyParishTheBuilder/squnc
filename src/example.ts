@@ -33,7 +33,7 @@ export const exampleChainRegistry_Mapping = () => {
     .from("chainFile__key_algos")
     .execute();
   console.log(chainFile__key_algos!.columns);
-  console.log(chainFile__key_algos!.rows);
+  console.log(chainFile__key_algos!.rows.map(r => r.values));
 
   // console.log("inspecting discovery payloads:");
   // console.log("Query:");
